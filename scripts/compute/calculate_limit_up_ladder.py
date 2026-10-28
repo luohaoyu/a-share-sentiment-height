@@ -34,6 +34,7 @@ import json
 import math
 import sys
 from collections import Counter, defaultdict
+from concurrent.futures import ThreadPoolExecutor
 from datetime import date
 from pathlib import Path
 from typing import Any
@@ -71,48 +72,60 @@ def as_bool(value: Any) -> "bool | None":
 
 
 def load_store(directory: Path) -> tuple[dict[str, dict[str, bool]], dict[str, str], dict[str, str], Counter]:
-    """Read every price store file.
-
-    Returns ``(limit_by_date, list_date_by_code, name_by_code, stats)`` where
-    ``limit_by_date[date][ts_code]`` is a strict bool (unknown rows are omitted).
-    """
+    """Read every price store file with bounded parallel small-file I/O."""
     limit_by_date: dict[str, dict[str, bool]] = defaultdict(dict)
     list_date_by_code: dict[str, str] = {}
     name_by_code: dict[str, str] = {}
     stats: Counter = Counter()
-    for path in sorted(directory.glob("*.json")):
+    paths = sorted(directory.glob("*.json"))
+
+    def parse(path: Path) -> tuple[str | None, str | None, list[tuple[str, bool]], Counter]:
+        local: Counter = Counter()
         try:
             store = read_json(path)
         except (OSError, json.JSONDecodeError):
-            stats["unreadable_store"] += 1
-            continue
+            local["unreadable_store"] += 1
+            return None, None, [], local
         ts_code = normalize_code(store.get("ts_code") or path.stem)
         if not ts_code:
-            stats["bad_store_code"] += 1
-            continue
-        stats["symbols"] += 1
+            local["bad_store_code"] += 1
+            return None, None, [], local
+        local["symbols"] += 1
+        listing = None
         if store.get("list_date"):
             try:
-                list_date_by_code[ts_code] = normalize_date(store["list_date"])
+                listing = normalize_date(store["list_date"])
             except ValueError:
-                stats["bad_list_date"] += 1
+                local["bad_list_date"] += 1
+        parsed: list[tuple[str, bool]] = []
         rows = store.get("qfq") or []
-        stats["rows"] += len(rows)
+        local["rows"] += len(rows)
         for row in rows:
             if not isinstance(row, dict):
                 continue
             try:
                 trade_date = normalize_date(row.get("trade_date"))
             except ValueError:
-                stats["bad_trade_date"] += 1
+                local["bad_trade_date"] += 1
                 continue
             flag = as_bool(row.get("is_limit_up"))
             if flag is None:
-                stats["unknown_rows"] += 1
+                local["unknown_rows"] += 1
                 continue
             if flag:
-                stats["limit_up_rows"] += 1
-            limit_by_date[trade_date][ts_code] = flag
+                local["limit_up_rows"] += 1
+            parsed.append((trade_date, flag))
+        return ts_code, listing, parsed, local
+
+    with ThreadPoolExecutor(max_workers=min(16, max(1, len(paths)))) as executor:
+        for ts_code, listing, parsed, local in executor.map(parse, paths, chunksize=16):
+            stats.update(local)
+            if not ts_code:
+                continue
+            if listing:
+                list_date_by_code[ts_code] = listing
+            for trade_date, flag in parsed:
+                limit_by_date[trade_date][ts_code] = flag
     return limit_by_date, list_date_by_code, name_by_code, stats
 
 

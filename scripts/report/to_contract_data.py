@@ -485,13 +485,19 @@ def build_pool_trends(
         reason_code = "limit_status_missing_as_of_cutoff" if blocked_missing else "no_active_first_board_as_of_cutoff"
         return {"start_date": None, "reason_code": reason_code, "reason_category": reason_category(reason_code)}
 
+    snapshot_cache: dict[tuple[str, str], dict[str, Any] | None] = {}
+
     def member_snapshot(code: str, cutoff: str) -> dict[str, Any] | None:
         """生成一只股票在截止日的三套口径证据；所有起点均重新按 cutoff 判断。"""
+        cache_key = (code, cutoff)
+        if cache_key in snapshot_cache:
+            return snapshot_cache[cache_key]
         series = forward.get(code, {})
         index_map = date_index_cache.get(code, {})
         now = series.get(cutoff, {}).get("close")
         t1_index = index_map.get(cutoff)
         if now is None or t1_index is None:
+            snapshot_cache[cache_key] = None
             return None
         ordered_dates = sorted(index_map)
         t1_start = ordered_dates[t1_index - threshold_days] if t1_index >= threshold_days else None
@@ -529,7 +535,7 @@ def build_pool_trends(
                   "reason": "涨停状态或价格数据缺失，无法确认首板" if reason_code == "limit_status_missing_as_of_cutoff" else "截至该日没有当前有效首板情绪波段"}
 
         meta = member_meta.get(code, {})
-        return {
+        result = {
             "code": meta.get("code") or code,
             "ts_code": meta.get("ts_code") or code,
             "name": meta.get("name"),
@@ -545,6 +551,8 @@ def build_pool_trends(
             "t2": t2,
             "t3": t3,
         }
+        snapshot_cache[cache_key] = result
+        return result
 
     def snapshot_stats(members: list[dict[str, Any]]) -> dict[str, Any]:
         def metric_stats(key: str) -> dict[str, Any]:

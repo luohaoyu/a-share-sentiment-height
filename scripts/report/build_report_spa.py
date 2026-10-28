@@ -133,8 +133,9 @@ def main() -> int:
     ]
     if args.data_js:
         step3 += ["--data-js", str(args.data_js)]
-    if args.skip_validate:
-        step3 += ["--skip-validate"]
+    # Stage 2 already performed the full contract validation. Avoid parsing and
+    # validating the same data a second time inside pack_report.
+    step3 += ["--skip-validate"]
     run("3/3 打包单文件报告", step3)
 
     print(f"\n完成：{output}")

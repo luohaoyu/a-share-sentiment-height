@@ -14,11 +14,15 @@ from typing import Any
 from compute_market_winners_from_daily import (
     GAIN_BANDS,
     load_calendar,
+    first_value,
     load_master,
     load_price_map,
     load_st,
     market_for,
+    normalize_code,
     normalize_date,
+    numeric,
+    read_records,
     risk_name,
 )
 
@@ -54,6 +58,45 @@ def select_strong_pool(
             break
     take = max(rank_leg_size, threshold_members)
     return day_rows[:take], threshold_members
+
+
+def load_ohlc_maps(path: Path) -> tuple[
+    dict[tuple[str, str], float],
+    dict[tuple[str, str], float],
+    dict[tuple[str, str], float],
+    dict[tuple[str, str], float],
+]:
+    """Parse daily partitions once and build all four OHLC maps.
+
+    The previous path called load_price_map four times, reopening and decoding every
+    full-market JSON partition once per field. This preserves the same duplicate
+    conflict checks while reducing JSON parsing from four passes to one.
+    """
+    maps: dict[str, dict[tuple[str, str], float]] = {
+        "open": {}, "high": {}, "low": {}, "close": {},
+    }
+    candidates = {
+        "open": ("open", "adj_open"),
+        "high": ("high", "adj_high"),
+        "low": ("low", "adj_low"),
+        "close": ("close", "adj_close"),
+    }
+    for row in read_records(path):
+        code = normalize_code(first_value(row, "ts_code", "code", "symbol"))
+        raw_date = first_value(row, "trade_date", "date", "cal_date")
+        if not code or raw_date in (None, ""):
+            continue
+        key = (code, normalize_date(raw_date))
+        for field, value_keys in candidates.items():
+            raw_value = first_value(row, *value_keys)
+            if raw_value in (None, ""):
+                continue
+            value = numeric(raw_value, field)
+            previous = maps[field].get(key)
+            if previous is not None and not math.isclose(previous, value, rel_tol=1e-12, abs_tol=1e-12):
+                raise ValueError(f"conflicting duplicate {field} for {key}: {previous} vs {value}")
+            maps[field][key] = value
+    return maps["open"], maps["high"], maps["low"], maps["close"]
 
 
 def main() -> int:
@@ -115,10 +158,7 @@ def main() -> int:
     }
 
     master = load_master(args.stock_basic)
-    closes = load_price_map(args.daily, ("close", "adj_close"), "close")
-    opens = load_price_map(args.daily, ("open", "adj_open"), "open")
-    highs = load_price_map(args.daily, ("high", "adj_high"), "high")
-    lows = load_price_map(args.daily, ("low", "adj_low"), "low")
+    opens, highs, lows, closes = load_ohlc_maps(args.daily)
     factors = {} if args.prices_adjusted else load_price_map(args.adj_factor, ("adj_factor", "factor"), "adj_factor")
     st_keys, st_names = load_st(args.st)
     # 最早目标日也需要前一交易日的强势股池，因此收益候选须多计算一个会话。

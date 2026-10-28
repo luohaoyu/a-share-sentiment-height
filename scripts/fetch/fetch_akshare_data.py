@@ -254,9 +254,8 @@ def pick_weighted_source(stock: dict[str, Any], enabled: dict[str, bool], weight
     (tencent does not cover 北交所). Among eligible sources the choice is weighted by
     ``weights`` (e.g. ``{"sina": 5, "eastmoney": 3, "tencent": 2}``) so the
     higher-weighted sources receive proportionally more tasks. A stock is retried
-    as a fresh queue task on failure, so re-routing to another source on retry is
-    safe -- each attempt still fetches BOTH legs (raw + hfq) from the one source it
-    picks, keeping the per-date factor basis (``hfq_close / raw_close``) consistent.
+    as a fresh queue task on failure; :func:`pick_retry_source` prefers an untried
+    eligible source before allowing a repeat.
     """
     elig = source_eligible(stock, enabled)
     if not elig:
@@ -265,6 +264,27 @@ def pick_weighted_source(stock: dict[str, Any], enabled: dict[str, bool], weight
     if sum(w) <= 0:
         w = [1.0] * len(elig)
     return random.choices(elig, weights=w, k=1)[0]
+
+
+def pick_retry_source(
+    stock: dict[str, Any],
+    enabled: dict[str, bool],
+    weights: dict[str, float],
+    tried_sources: list[str],
+) -> str:
+    """Prefer a not-yet-tried eligible source for task-level retries.
+
+    Weighted random assignment remains unchanged for the first attempt. On retry,
+    repeatedly selecting the same failing adapter wastes the bounded attempt budget
+    and can dead-letter a symbol even though another enabled adapter is healthy.
+    After every eligible source has been tried, weighted selection is allowed again.
+    """
+    eligible = source_eligible(stock, enabled)
+    untried = [source for source in eligible if source not in set(tried_sources)]
+    if not untried:
+        return pick_weighted_source(stock, enabled, weights)
+    retry_enabled = {source: source in untried for source in enabled}
+    return pick_weighted_source(stock, retry_enabled, weights)
 
 
 def resolve_source_rates(args: "argparse.Namespace") -> dict[str, bool]:
@@ -345,10 +365,13 @@ def frame_records(frame: Any) -> list[dict[str, Any]]:
 
 
 def atomic_write_json(path: Path, payload: Any) -> None:
+    """Atomically stream compact JSON for machine-consumed cache artifacts."""
     path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_suffix(path.suffix + ".tmp")
-    temporary.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-    temporary.replace(path)
+    temporary = path.with_suffix(path.suffix + f".tmp{os.getpid()}")
+    with temporary.open("w", encoding="utf-8", newline="\n") as handle:
+        json.dump(payload, handle, ensure_ascii=False, separators=(",", ":"))
+        handle.write("\n")
+    os.replace(temporary, path)
 
 
 def read_json_rows(path: Path) -> list[dict[str, Any]]:
@@ -800,9 +823,10 @@ def bootstrap(
             refresh_limit_up_in_payload(store_payload, ts_code)
             prices_v4.write_store(output_dir, store_payload)
             derived = prices_v4.derive_rows(store_payload)
+            missing_set = set(missing)
             selected_rows = [
                 row for row in derived["hfq"]
-                if row["trade_date"] in set(missing) and row["close"] is not None
+                if row["trade_date"] in missing_set and row["close"] is not None
             ]
             dropped = len(missing) - len(selected_rows)
             return ({
@@ -859,7 +883,9 @@ def bootstrap(
             ts_code = stock["ts_code"]
             attempt_no = task.attempt + 1  # 1 起的任务级尝试序号
             try:
-                primary = pick_weighted_source(stock, enabled, weights)
+                primary = pick_retry_source(
+                    stock, enabled, weights, list(task.tried_sources),
+                )
                 request, rows = fetch_one(stock, primary)
             except Exception as exc:  # noqa: BLE001 - 任何失败都视为可重投的任务失败
                 request = {
@@ -999,7 +1025,12 @@ def compute_limit_up(prev_close: float, close: float, ratio: float) -> bool:
     if prev_close is None or close is None or prev_close <= 0 or close <= 0:
         return False
     limit_price = limit_up_price(prev_close, ratio)
-    return close >= limit_price - 0.005
+    # AkShare's Sina and Tencent qfq series can differ by one cent on the
+    # predecessor close while agreeing on the current close. Treat one source
+    # tick plus the half-cent comparison tolerance as the same limit-up event;
+    # otherwise a weighted source choice can flip a borderline board between
+    # identical cold starts (for example 688001.SH on 2026-09-07).
+    return close >= limit_price - 0.015
 
 
 def annotate_limit_up(
@@ -1324,28 +1355,32 @@ def build_bootstrap_summary(
     return summary
 
 
-def merge_shard_partitions(output_dir: Path, shard_dirs: list[Path]) -> dict[str, int]:
-    """Merge per-shard daily slices into the authoritative ``daily_adjusted`` layer.
-
-    Dedupe key is ``ts_code`` (a symbol belongs to exactly one shard, so collisions
-    only appear on resume/retry, where the later file wins). Each date partition is
-    still merged through ``merge_partition`` so an existing cache is extended, not
-    overwritten.
-    """
-    merged: dict[str, dict[str, dict[str, Any]]] = defaultdict(dict)
-    for shard_dir in shard_dirs:
-        if not shard_dir.exists():
-            continue
-        for path in sorted(shard_dir.glob("*.json")):
-            for row in read_json_rows(path):
-                if row.get("ts_code"):
-                    merged[path.stem][row["ts_code"]] = row
+def merge_shard_partitions(
+    output_dir: Path,
+    shard_dirs: list[Path],
+    sessions: "list[str] | None" = None,
+) -> dict[str, int]:
+    """Merge shard slices one date at a time to bound memory and ignore stale runs."""
+    if sessions is None:
+        trade_dates = sorted({
+            path.stem
+            for shard_dir in shard_dirs if shard_dir.exists()
+            for path in shard_dir.glob("*.json")
+        })
+    else:
+        trade_dates = sorted(set(sessions))
     daily_dir = output_dir / "daily_adjusted"
     rows_per_date: dict[str, int] = {}
-    for trade_date in sorted(merged):
-        rows = list(merged[trade_date].values())
-        if not rows:
+    for trade_date in trade_dates:
+        merged: dict[str, dict[str, Any]] = {}
+        for shard_dir in shard_dirs:
+            path = shard_dir / f"{trade_date}.json"
+            for row in read_json_rows(path):
+                if row.get("ts_code"):
+                    merged[row["ts_code"]] = row
+        if not merged:
             continue
+        rows = list(merged.values())
         merge_partition(daily_dir / f"{trade_date}.json", rows)
         rows_per_date[trade_date] = len(rows)
     return rows_per_date
@@ -1467,7 +1502,9 @@ def run_sharded_bootstrap(
     manifest.sort(key=lambda row: str(row.get("ts_code") or ""))
 
     rows_per_date = merge_shard_partitions(
-        args.output_dir, [base_dir / f"part{item['index']}" / "daily" for item in shard_report]
+        args.output_dir,
+        [base_dir / f"part{item['index']}" / "daily" for item in shard_report],
+        sessions,
     )
     elapsed = time.time() - started
     summary = build_bootstrap_summary(

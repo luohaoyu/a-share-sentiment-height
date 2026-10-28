@@ -101,15 +101,19 @@ def write_store(out_dir, ts_code, sessions_subset, last_update="2026-10-22T09:00
 
 
 def run_bootstrap(out_dir, ak, master, sessions, picker=None, enabled=None, weights=None, max_attempts=3):
+    original_picker = fa.pick_weighted_source
     if picker is not None:
         fa.pick_weighted_source = picker
-    return fa.bootstrap(
-        ak, Path(out_dir), master, sessions,
-        retries=1, min_interval=0.0, selected_symbols=set(), workers=1,
-        enabled=enabled or {"sina": True, "eastmoney": True, "tencent": True},
-        weights=weights or {"sina": 5, "eastmoney": 3, "tencent": 2},
-        max_attempts=max_attempts,
-    )
+    try:
+        return fa.bootstrap(
+            ak, Path(out_dir), master, sessions,
+            retries=1, min_interval=0.0, selected_symbols=set(), workers=1,
+            enabled=enabled or {"sina": True, "eastmoney": True, "tencent": True},
+            weights=weights or {"sina": 5, "eastmoney": 3, "tencent": 2},
+            max_attempts=max_attempts,
+        )
+    finally:
+        fa.pick_weighted_source = original_picker
 
 
 PASS = 0
@@ -208,8 +212,20 @@ def test_cross_source_reroute():
         check("no dead letter", dead == [], str(dead))
 
 
+def test_retry_prefers_untried_source():
+    print("[5] retry source selection prefers an untried eligible adapter")
+    stock = make_stock("000001", "000001.SZ", "SZ")
+    enabled = {"sina": True, "eastmoney": False, "tencent": True}
+    weights = {"sina": 5, "eastmoney": 3, "tencent": 2}
+    picked = fa.pick_retry_source(stock, enabled, weights, ["sina"])
+    check("retry switches from sina to tencent", picked == "tencent", picked)
+    bj = make_stock("889001", "889001.BJ", "BJ")
+    picked_bj = fa.pick_retry_source(bj, enabled, weights, ["sina"])
+    check("single-source BJ retry may reuse sina", picked_bj == "sina", picked_bj)
+
+
 def test_dead_letter():
-    print("[5] all sources fail -> dead_letter with tried_sources")
+    print("[6] all sources fail -> dead_letter with tried_sources")
     with tempfile.TemporaryDirectory() as d:
         ak = FakeAk(fail={"sina", "eastmoney", "tencent"})
         master = [make_stock("000001", "000001.SZ", "SZ")]
@@ -229,8 +245,18 @@ def test_dead_letter():
             check("dead letter has reasons", len(dead[0].get("reasons", [])) == 3, str(dead))
 
 
+def test_limit_up_tolerates_one_tick_source_drift():
+    print("[7] one-tick qfq source drift -> stable limit-up mark")
+    # Tencent can report the predecessor close as 48.53 while Sina reports
+    # 48.54 for the same qfq series. Both must classify the 58.24 close as a
+    # 20% limit-up, otherwise weighted source routing changes the business result.
+    check("tencent-caliber limit-up", fa.compute_limit_up(48.53, 58.24, 0.20))
+    check("sina one-tick drift limit-up", fa.compute_limit_up(48.54, 58.24, 0.20))
+    check("two-tick short remains false", not fa.compute_limit_up(48.55, 58.24, 0.20))
+
+
 def test_bj_excludes_tencent():
-    print("[6] BJ stock -> tencent never contacted")
+    print("[8] BJ stock -> tencent never contacted")
     with tempfile.TemporaryDirectory() as d:
         ak = FakeAk()
         master = [make_stock("889001", "889001.BJ", "BJ")]
@@ -249,7 +275,9 @@ if __name__ == "__main__":
     test_per_day_incremental()
     test_empty_cache_full_fetch()
     test_cross_source_reroute()
+    test_retry_prefers_untried_source()
     test_dead_letter()
+    test_limit_up_tolerates_one_tick_source_drift()
     test_bj_excludes_tencent()
     print(f"\n{PASS} passed, {FAIL} failed")
     sys.exit(1 if FAIL else 0)

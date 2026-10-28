@@ -190,9 +190,14 @@ def derive(
     sessions_filter: "list[str] | None" = None,
 ) -> dict[str, Any]:
     """Rebuild every derived artifact from the v5 qfq store."""
-    codes = P.list_symbols(cache_dir)
-    if not codes:
+    all_codes = P.list_symbols(cache_dir)
+    if not all_codes:
         raise SystemExit(f"no {P.STORE_DIR}/*.json under {cache_dir}; run --mode factorize first")
+    # Bootstrap already materializes daily_adjusted. When an explicit candidate
+    # scope is supplied, derive only the candidate views instead of reopening all
+    # 5,000+ stores and rebuilding identical full-market partitions.
+    scope_only = bool(scope) and out_dir == cache_dir and (out_dir / "daily_adjusted").is_dir()
+    codes = sorted(scope & set(all_codes)) if scope_only else all_codes
     out_dir.mkdir(parents=True, exist_ok=True)
 
     partitions: dict[str, list[dict[str, Any]]] = defaultdict(list)
@@ -208,10 +213,11 @@ def derive(
         if not store.get("qfq"):
             empty_qfq.append(code)
         derived = P.derive_rows(store)
-        for row in derived["hfq"]:
-            if sessions_filter and row["trade_date"] not in sessions_filter:
-                continue
-            partitions[row["trade_date"]].append(row)
+        if not scope_only:
+            for row in derived["hfq"]:
+                if sessions_filter and row["trade_date"] not in sessions_filter:
+                    continue
+                partitions[row["trade_date"]].append(row)
         # unadjusted_daily + forward_daily stay scoped: only the qfq candidate set
         # consumes them, so materializing 5575 copies would recreate the waste v4 removes.
         if code in scope:
@@ -240,14 +246,15 @@ def derive(
     manifest.update({
         "schema_version": P.SCHEMA_VERSION,
         "derived_at_mode": "derive",
-        "sessions": sorted(partitions),
-        "session_count": len(partitions),
-        "symbol_count": stats["symbols"],
+        "sessions": sorted(partitions) if partitions else manifest.get("sessions", []),
+        "session_count": len(partitions) if partitions else manifest.get("session_count", 0),
+        "symbol_count": len(all_codes),
+        "scope_only": scope_only,
         "qfq_scope": sorted(scope),
         "symbols_without_qfq": len(empty_qfq),
         "symbols_without_qfq_sample": empty_qfq[:5],
         "derived_counts": {
-            "daily_adjusted_partitions": len(partitions),
+            "daily_adjusted_partitions": len(partitions) if partitions else manifest.get("derived_counts", {}).get("daily_adjusted_partitions", 0),
             "forward_daily": qfq_written,
             "unadjusted_daily": qfq_written,
             "symbol_cache_views": stats["symbols"] if with_views else 0,

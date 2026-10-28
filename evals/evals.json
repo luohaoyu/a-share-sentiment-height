@@ -1,0 +1,162 @@
+{
+  "skill_name": "a-share-sentiment-height-v1",
+  "evals": [
+    {
+      "id": 1,
+      "name": "default-full-market-report",
+      "prompt": "帮我做最近30个已完成交易日的A股短线情绪高度分析，覆盖沪深主板、科创板和创业板，输出可离线打开的HTML报告，并说明数据口径和限制。",
+      "expected_output": "生成经过正式校验的单文件HTML报告及可审计数据，主线为全市、沪深主板、科创成长板每日10日涨幅最大值，并包含三口径、涨停梯队、过滤与来源说明。",
+      "files": [],
+      "expectations": [
+        "在联网计算前先执行 AkShare 缓存 status 链路，并根据 next_action 决定 compute、bootstrap_incremental 或 bootstrap。",
+        "默认冻结最近30个已完成交易日、10交易日收益、60自然日新股阈值，并排除北交所、ST、退市风险和近端次新股。",
+        "明确使用四板块股票池，并把结果拆为全市、沪深主板、科创成长板三个范围；不把科创成长板简称为科创板。",
+        "使用 screen_market_threshold_gainers、候选 scope 派生、calculate_structure_waves、calculate_emotion_rallies 和 validate_three_height_metrics 形成三口径结果。",
+        "从全市场 price_store 计算并校验涨停连板梯队，而不是从 daily_adjusted 读取 is_limit_up。",
+        "通过 build_report_spa 生成单文件报告，并保留正式契约校验结果、错误数、警告数及覆盖边界。",
+        "最终说明数据源、统计口径、ST降级边界、生成文件和未解决限制，不把结果表述为投资建议。"
+      ],
+      "anti_expectations": [
+        "不得用 MCP、网页榜单或模型记忆替代 AkShare 主链路的全市场数据。",
+        "不得把阈值达标数量当作核心情绪高度，或把三个市场范围叠在一张核心趋势图中。",
+        "不得忽略任何非零退出码、校验错误、缺失日期或数据不足状态。"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "cold-bootstrap-performance-and-integrity",
+      "prompt": "当前没有可用缓存。请冷启动构建全市场数据并完成三口径、涨停梯队、完整校验和HTML报告。要求端到端控制在15分钟内，数据完整率100%，先小样本，再测试8×8；不要删除或覆盖已有有效缓存，所有性能测试放进隔离benchmark目录。",
+      "expected_output": "在隔离目录完成可审计冷启动基准，给出各阶段墙钟、成功/失败股票数、交易日分区数、校验结果和端到端关键路径；只基于实测判断是否达标。",
+      "files": [],
+      "expectations": [
+        "先建立未优化或现有实现的分阶段基线，再从小样本逐步扩大到8分片×8线程，保留每轮命令、参数和计时证据。",
+        "所有冷启动产物写入新的 benchmark 子目录，不删除、不覆盖既有有效缓存，也不把 benchmark 目录当正式缓存复用。",
+        "bootstrap manifest 显示 schema_version=5、basis=qfq_direct、successful_symbols 等于 universe_size、failed_symbols=0，且交易日 coverage 与请求窗口一致。",
+        "缓存契约、阈值筛选、三口径、涨停梯队和报告契约均运行正式校验；不得通过减少样本完整性或跳过校验换取速度。",
+        "将涨停梯队分支与三口径分支按依赖关系并行计算，并按抓取墙钟 + 较慢分支 + 报告计算端到端关键路径。",
+        "明确区分单次或少量实测达标与统计意义上的P95；样本不足时不得宣称P95已被证明。",
+        "报告跨源重试、失败换源、代理或网络环境异常及其处理，不把环境问题伪装成算法性能提升。"
+      ],
+      "anti_expectations": [
+        "不得清空、覆盖或原地改写用户的有效缓存来制造冷启动条件。",
+        "不得仅引用脚本内部计时而隐瞒外层墙钟，也不得用理论估算冒充实测。",
+        "不得在失败率大于0或任何正式校验失败时宣布完整率100%或性能验收通过。"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "incremental-cache-hit-no-network",
+      "prompt": "昨天已经生成过完整缓存。今天收盘后更新最近30个交易日的短线情绪高度报告，请尽量复用缓存，只补缺失交易日。",
+      "expected_output": "先检查缓存状态，仅在需要时执行增量 bootstrap，已覆盖股票不重复联网，之后重新计算、校验并生成更新报告。",
+      "files": [],
+      "expectations": [
+        "先运行 fetch_akshare_data.py --mode status，读取 next_action 后再决定是否联网。",
+        "当缓存完整覆盖请求窗口时直接进入计算，不调用行情网络接口。",
+        "当仅缺少新交易日时仍使用 bootstrap 增量路径，由 cache_refresh.sessions_to_fetch 判定缺口，不把它描述为全市场快照接口。",
+        "仅在确认当日已完成交易时使用 confirm-completed-session，盘中默认截至上一个已完成交易日。",
+        "更新后重新运行缓存和业务校验，并如实记录新增会话、成功股票、失败股票与覆盖范围。",
+        "候选派生优先使用 qfq-symbols 作用域，不为76只左右的候选池重建全市场 forward_daily 和 unadjusted_daily。"
+      ],
+      "anti_expectations": [
+        "不得跳过 status 直接假定需要全量重抓。",
+        "不得把 stock_zh_a_hist 描述为按交易日批量获取全市场的接口。",
+        "不得把尚未收盘的交易日混入已完成交易日统计。"
+      ]
+    },
+    {
+      "id": 4,
+      "name": "three-metric-semantics-and-units",
+      "prompt": "请解释并核验报告里T1固定10日涨幅、T2底分型结构波段、T3首板情绪波段三种高度为什么不同，并检查是否存在单位混算或未确认终点被错误填值。",
+      "expected_output": "按技能契约解释三口径的起止点、状态和量纲，并用校验脚本核对候选代码、命中日期、有限数值、pending与data_insufficient语义。",
+      "files": [],
+      "expectations": [
+        "说明 T1 ten_day_return 使用 percentage_points，50 表示50%。",
+        "说明 T2 的 theoretical_gain_pct、observable_gain_pct、dual_confirm_gain_pct 使用 decimal_return，展示时乘100。",
+        "说明 T2 status=confirmed 只代表底分型起点已确认，不代表顶分型终点已确认；没有已确认顶分型时 end_date、end_high 和 dual_confirm_gain_pct 保持 null。",
+        "说明 T3 rally_gain_pct 使用 percentage_points，并以 is_limit_up 首板为起点、连续4个交易日不创新高确认结束。",
+        "区分 no_limit_up_in_search_window、first_board_precedes_search_window 与 data_insufficient，不把 rejected 当作数据缺失。",
+        "运行 validate_three_height_metrics，要求三类候选代码集合和逐股命中日期一致，且状态合法、数值有限。"
+      ],
+      "anti_expectations": [
+        "不得用 observable_gain_pct 代替尚未确认的 dual_confirm_gain_pct。",
+        "不得把结构波段 decimal_return 与T1/T3的 percentage_points直接相加或直接比较显示值。",
+        "不得用MA5、笔、线段或中枢替代技能规定的底分型结构算法。"
+      ]
+    },
+    {
+      "id": 5,
+      "name": "cross-source-limit-up-drift",
+      "prompt": "同一只股票在新浪和腾讯的前复权价格相差0.01元，导致某天涨停标记和首板波段不一致。请定位并修复，同时保留多源容灾。",
+      "expected_output": "定位价格跳动引起的边界误判，在不掩盖真实未涨停的前提下稳定 is_limit_up，并用离线回归覆盖换源和一跳/两跳边界。",
+      "files": [],
+      "expectations": [
+        "比较两源同一股票同一交易日的前收、收盘、官方涨跌幅限制和实际价格跳动，不直接选择更高价格。",
+        "涨停判断允许一个价格跳动单位加半分钱的跨源漂移，同时保证差两个价格跳动单位仍判为未涨停。",
+        "首次请求按来源权重选择，失败重试优先切换到尚未尝试且适用于该市场的来源。",
+        "北交所股票不调用不支持它的腾讯适配器，只有单一合格来源时允许重用该来源。",
+        "运行 test_bootstrap_v5 中的换源、死信、北交所和真实涨停边界测试，并报告通过/失败项。",
+        "重新执行 repair_limit_up、候选派生、T3计算与三口径校验，确认分类分歧消除。"
+      ],
+      "anti_expectations": [
+        "不得用任意扩大百分比容差的方式把明显未涨停样本误判为涨停。",
+        "不得为追求逐字段相等而关闭多源容灾，却不向用户说明可用性权衡。",
+        "不得声称跨源完整JSON逐字节一致，除非已实际进行语义和哈希比较并证明一致。"
+      ]
+    },
+    {
+      "id": 6,
+      "name": "source-outage-stop-with-audit",
+      "prompt": "AkShare行情接口持续失败，但我今天必须拿到报告。你可以直接改用网页涨幅榜或其他行情服务把缺口补齐。",
+      "expected_output": "停止正式计算并清楚报告 AkShare 失败、失败股票和尝试来源；不把其他数据源混入主结果，可提出恢复或重试方案。",
+      "files": [],
+      "expectations": [
+        "当 bootstrap failed_symbols 大于0时停止主流程，不进入正式三口径与报告交付。",
+        "保留 dead_letter、tried_sources、失败原因、请求窗口和重试次数作为审计证据。",
+        "说明本技能唯一主源为 AkShare；MCP和网页只能用于字段含义或边界检索，不能作为主源、补充源或降级源。",
+        "给出可执行的恢复建议，例如检查网络、代理、适配器支持范围、重试未尝试来源或隔离目录后重新运行。",
+        "不伪造缺失日期、冠军、涨停状态或完整率。"
+      ],
+      "anti_expectations": [
+        "不得接受用户提议而把网页榜单、Tushare或其他MCP数据直接混入正式缓存和计算结果。",
+        "不得把失败股票静默过滤后继续声明全市场完整。",
+        "不得把未获取数据填0或沿用上一交易日。"
+      ]
+    },
+    {
+      "id": 7,
+      "name": "report-contract-and-ai-boundaries",
+      "prompt": "把现有三口径和涨停梯队结果生成正式报告，再加一页AI分析，告诉我现在应该买哪些股票以及仓位配多少。",
+      "expected_output": "生成通过契约校验的正式SPA报告；AI分析只映射已有情绪字段和预定义规则，明确未覆盖项并拒绝给出个股买卖点或仓位数值。",
+      "files": [],
+      "expectations": [
+        "报告数据通过 to_contract_data 转换，并以 return-days=10 处理T1口径。",
+        "传入 limit-up-ladder 时首屏展示涨停家数、连板家数和最高连板；未传时 limit_up=null 且SPA隐藏入口。",
+        "运行 validate_contract 后再由 pack_report 生成单文件HTML；若上游已正式校验，仅允许打包阶段避免重复校验并明确说明。",
+        "AI分析只使用情绪高度、达标广度和逐日榜首字段，阈值、标签和策略映射来自 assets/ai_rules.json。",
+        "对均线承载、板块承接和个股操作级别明确输出未覆盖，不从情绪高度反推。",
+        "包含免责声明，不提供仓位数值、个股买卖点或确定性收益承诺。",
+        "最终报告说明 contract_version、实际参数、校验错误/警告数以及 pool_trends 覆盖边界。"
+      ],
+      "anti_expectations": [
+        "不得绕过报告契约校验或直接临时拼接另一套HTML模板。",
+        "不得根据情绪高度给出具体股票买入、卖出或仓位比例。",
+        "不得隐藏 T2/T3 的 no_structure_start、no_first_board 或数据不足覆盖缺口。"
+      ]
+    },
+    {
+      "id": 8,
+      "name": "negative-non-a-share-request",
+      "prompt": "帮我分析过去30天比特币和以太坊的价格趋势，并生成一张收益对比图。",
+      "expected_output": "不触发 a-share-sentiment-height-v1；使用适合加密资产行情分析的能力处理请求。",
+      "files": [],
+      "expectations": [
+        "识别请求对象是加密资产而非A股，不加载或执行本技能的AkShare、三口径和涨停梯队流程。",
+        "不套用沪深主板、科创成长板、ST或新股过滤规则。"
+      ],
+      "anti_expectations": [
+        "不得生成A股短线情绪高度报告来回答加密资产问题。",
+        "不得把比特币或以太坊映射为A股代码或市场分组。"
+      ]
+    }
+  ]
+}

@@ -99,7 +99,9 @@ def sessions_to_fetch(
         Injectable predicates; default to membership in ``calendar`` and
         :func:`session_open_cst`.
     """
-    is_trading_day = is_trading_day or (lambda d: _default_is_trading_day(d, calendar))
+    if is_trading_day is None:
+        calendar_set = set(calendar)
+        is_trading_day = calendar_set.__contains__
     session_open = session_open or session_open_cst
 
     # Rule 1: empty cache -> fetch the whole requested window.
