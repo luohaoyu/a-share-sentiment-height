@@ -1,0 +1,1608 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>市场分段 10 日涨幅报告</title>
+<style>
+:root{--red:#dc2626;--green:#16835a;--ink:#172033;--muted:#667085;--line:#e5e7eb;--soft:#f6f7fb;--amber:#f59e0b;--purple:#7c3aed;--blue:#2563eb}
+*{box-sizing:border-box}
+body{margin:0;background:var(--soft);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",Arial,sans-serif}
+.wrap{max-width:1180px;margin:auto;padding:24px 22px 56px}
+.hero,.panel,.card{background:#fff;border:1px solid var(--line);border-radius:16px}
+.hero{padding:26px;border-top:5px solid var(--red)}
+h1{font-size:27px;line-height:1.25;margin:6px 0 10px}
+h2{font-size:20px;margin:0 0 6px}
+h3{font-size:15px;margin:18px 0 6px}
+.eyebrow{font-size:13px;color:#475467;font-weight:700}
+.subtitle{font-size:15px;line-height:1.7;margin:0 0 6px;color:#344054}
+.muted,small{color:var(--muted);font-size:13px;line-height:1.65}
+.tag,.badge{display:inline-block;border:1px solid #dfe3e8;border-radius:999px;padding:5px 10px;margin:4px 4px 0 0;font-size:12px}
+.badge.good{color:#087443;background:#ecfdf3;border-color:#a6f4c5}
+.badge.warn{color:#9a3412;background:#fff7ed;border-color:#fed7aa}
+.badge.plain{color:#475467;background:#f8fafc}
+.state-strong{background:#ecfdf3;color:#087443;border-color:#a6f4c5}
+.state-neutral{background:#fff7ed;color:#9a3412;border-color:#fed7aa}
+.state-weak,.state-insufficient{background:#f8fafc;color:#475467}
+.pool-change{font-size:11px;margin-left:6px}.pool-change.new{color:#b42318;background:#fef3f2;border:1px solid #fecdca;border-radius:999px;padding:2px 6px}.pool-change.continued{color:#667085}
+.exit-box{margin-top:12px;border:1px solid #fed7aa;background:#fffaf5;border-radius:12px;padding:12px 14px}.exit-box summary{color:#9a3412}.exit-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px;margin-top:9px}.exit-item{background:#fff;border:1px solid #f3d6b4;border-radius:8px;padding:8px 10px;font-size:12px}.exit-item b{display:block;font-size:13px}
+.tldr{margin-top:16px;border-left:5px solid var(--red);background:#fff7f3;border-radius:10px;padding:15px 17px;font-size:15px;line-height:1.8}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px;margin-top:16px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px;margin-top:12px}
+.card{padding:16px}
+.card b{display:block;font-size:25px;margin:6px 0;color:var(--ink)}
+.panel{padding:20px;margin-top:16px}
+.nav{position:sticky;top:0;z-index:9;display:flex;gap:6px;overflow:auto;background:#fffffff2;border:1px solid var(--line);border-radius:12px;padding:8px;margin:14px 0;backdrop-filter:blur(6px)}
+.nav a{color:#344054;text-decoration:none;white-space:nowrap;font-size:13px;padding:7px 12px;border-radius:8px}
+.nav a:hover{background:#f2f4f7}
+.nav a.active{background:var(--ink);color:#fff}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:12px 0 4px}
+.fbtn{border:1px solid var(--line);background:#fff;color:#344054;border-radius:8px;padding:6px 12px;font-size:12.5px;cursor:pointer;font-family:inherit}
+.fbtn.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+.search{border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:12.5px;font-family:inherit;min-width:150px}
+.chart{overflow:auto;border:1px solid #edf0f3;border-radius:12px;margin-top:12px;padding:6px}
+.chart-bar{display:flex;justify-content:flex-end;gap:6px;margin:10px 0 -8px}
+.png-btn{border:1px solid var(--line);background:#fff;color:#667085;border-radius:6px;padding:2px 9px;font-size:11.5px;line-height:1.7;cursor:pointer;font-family:inherit}
+.png-btn:hover{color:var(--ink);border-color:#98a2b3;background:#f8fafc}
+.png-btn:disabled{opacity:.55;cursor:default}
+.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:#172033;color:#fff;padding:10px 18px;border-radius:10px;font-size:13px;z-index:99;box-shadow:0 8px 24px rgba(16,24,40,.2)}
+svg.chart-svg{display:block;width:100%;height:auto}
+.axis{font-size:11px;fill:#667085}
+.grid-line{stroke:#eef1f5;stroke-width:1}
+.zero-line{stroke:#d0d5dd;stroke-width:1}
+.legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:8px;font-size:12.5px;color:#344054}
+.legend i{display:inline-block;width:16px;height:3px;border-radius:2px;vertical-align:middle;margin-right:6px}
+.inlink{color:var(--blue);text-decoration:underline;cursor:pointer}
+  .table-wrap{overflow:auto;margin-top:12px;border:1px solid #edf0f3;border-radius:12px}
+.pool-summary{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:12px}.pool-summary .tag{margin:0}.pool-date{min-width:150px;border:1px solid var(--line);border-radius:8px;padding:6px 9px;font:inherit;font-size:12.5px;background:#fff;color:var(--ink)}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{border-bottom:1px solid #e8ebf0;padding:9px 11px;text-align:left;white-space:nowrap}
+th{background:#f8fafc;color:#475467;position:sticky;top:0;font-weight:600;cursor:pointer;user-select:none}
+th:hover{background:#eef2f6}
+tbody tr:hover{background:#fcfcfd}
+td.num{text-align:right;font-variant-numeric:tabular-nums}
+.up{color:var(--red)}
+.down{color:var(--green)}
+.callout{background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:13px 15px;color:#854d0e;margin-top:12px;font-size:13.5px;line-height:1.7}
+.callout.err{background:#fef2f2;border-color:#fecaca;color:#991b1b}
+.empty{padding:26px;text-align:center;color:#667085}
+.kv{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;margin-top:12px}
+.kv>div{background:#f8fafc;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:13px}
+.kv b{display:block;color:#475467;font-weight:600;font-size:12px;margin-bottom:3px}
+.source-list{list-style:none;padding:0;margin:8px 0 0}
+.source-list li{display:flex;justify-content:space-between;gap:16px;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px;word-break:break-all}
+details{border-top:1px solid var(--line);padding:12px 0}
+summary{cursor:pointer;font-weight:600;font-size:13.5px}
+pre{background:#0f172a;color:#e2e8f0;padding:12px;border-radius:10px;overflow:auto;font-size:12px;max-height:320px}
+.disclaimer{font-size:12px;color:#667085;border-top:1px solid var(--line);padding-top:14px;margin-top:20px;line-height:1.7}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+@media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}.wrap{padding:14px}h1{font-size:22px}}
+@media(max-width:600px){.wrap{padding:12px 10px 40px}.hero{padding:18px 16px}.h1,h1{font-size:19px}h2{font-size:18px}.subtitle{font-size:14px}.grid{grid-template-columns:1fr}.grid3,.grid3{grid-template-columns:1fr}.card{padding:13px}.card b{font-size:21px}.nav{padding:6px;gap:4px}.nav a{padding:6px 9px;font-size:12px}.panel{padding:14px;margin-top:12px}.kv{grid-template-columns:1fr}.table-wrap{margin-top:10px}table{font-size:12px}th,td{padding:7px 8px}.legend{gap:10px;font-size:12px}.toolbar{gap:6px}.fbtn{padding:5px 9px;font-size:12px}.search{flex:1 1 100%;min-width:0}}
+@media print{.nav,.toolbar,.chart-bar,.toast{display:none}body{background:#fff}.panel,.hero{break-inside:avoid}.wrap{max-width:none;padding:0}}
+</style>
+</head>
+<body>
+<h2 class="sr-only">市场分段 10 日涨幅报告，含情绪高度、达标股三口径趋势、AI 分析与方法审计</h2>
+<div class="wrap">
+  <header class="hero" id="hero"></header>
+  <nav class="nav" id="nav" role="tablist"></nav>
+  <main id="view"></main>
+  <div class="disclaimer" id="disclaimer"></div>
+</div>
+
+<script id="report-data" type="application/json">__REPORT_DATA__</script>
+<script>
+(function () {
+  'use strict';
+
+  var CONTRACT_VERSION = 'report-view-v4';
+  var STATE = {
+    view: 'summary',
+    filters: { structure: 'all', emotion: 'all' },
+    endFilters: { structure: 'all', emotion: 'all' },
+    sort: {},
+    queries: { structure: '', emotion: '' },
+    poolMode: 'split',
+    poolMarket: 'all',
+    poolDate: null,
+    dailyPoolMarket: 'all',
+    dailyPoolMetric: 'all',
+    dailyPoolAvailability: 'all',
+    leaderMarket: 'all',
+    leaderMetric: 't1',
+    timelineTag: 'all',
+    ladderDate: null,
+    page: { structure: 0, emotion: 0 }
+  };
+
+  // ---------- 数据装载（三种模式：内嵌 / window.REPORT_DATA / 缺失） ----------
+  function boot() {
+    var holder = document.getElementById('report-data');
+    if (holder) {
+      var text = (holder.textContent || '').trim();
+      // Split the marker so the packer only replaces the actual JSON slot above.
+      if (text && text !== '__REPORT_' + 'DATA__') {
+        try { return { data: JSON.parse(text), mode: 'embedded' }; }
+        catch (e) { return { data: null, mode: 'parse-error', error: e.message }; }
+      }
+    }
+    if (window.REPORT_DATA) return { data: window.REPORT_DATA, mode: 'external' };
+    return { data: null, mode: 'missing' };
+  }
+
+  var BOOT = boot();
+  var DATA = BOOT.data || null;
+
+  // ---------- 格式化 ----------
+  function pct(v, digits) { return v == null ? '—' : (v * 100).toFixed(digits == null ? 1 : digits) + '%'; }
+  function signed(v) { return v == null ? '—' : (v > 0 ? '+' : '') + (v * 100).toFixed(2) + '%'; }
+  function dash(v) { return v == null || v === '' ? '—' : String(v); }
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function mmdd(date) { return date ? date.slice(5) : ''; }
+
+  var STATUS = {
+    confirmed: ['已确认', 'good'],
+    pending: ['待确认', 'warn'],
+    data_insufficient: ['数据不足', 'plain'],
+    rejected: ['不达标', 'plain']
+  };
+  // 首板缺失/不达标的原因码 → 人话。结构性与数据缺失必须分开讲：
+  // 前者是样本定义决定的（本来就没有首板可锚），后者才真的是缺口。
+  var REASON_TEXT = {
+    no_limit_up_in_search_window: '窗口内无任何涨停（趋势型，无首板可锚）',
+    first_board_precedes_search_window: '首板早于搜索窗口（长连板）',
+    prior_limit_status_missing_for_first_board: '首板前 5 日含缺失涨停状态',
+    insufficient_prior_sessions_for_first_board: '数据起点不足 5 个交易日',
+    limit_status_missing_in_first_board_search: '搜索区间含缺失涨停状态',
+    stock_missing_from_forward_daily: '缺少前复权日线',
+    no_confirmed_structure_bottom_as_of_cutoff: '截至当日尚无已确认严格底分型',
+    no_active_first_board_as_of_cutoff: '截至当日没有当前有效首板情绪波段',
+    limit_status_missing_as_of_cutoff: '涨停状态存在缺失，无法确认首板',
+    insufficient_return_history: '不足10个交易日'
+  };
+  var REASON_CATEGORY_TEXT = {
+    structural: '结构性原因',
+    data_gap: '数据缺口',
+    insufficient_history: '历史数据不足'
+  };
+  var VALIDATION_TEXT = {
+    valid: '校验是否通过', errors: '错误列表', warnings: '警告列表', coverage: '覆盖统计',
+    base_candidate_stocks: '基础候选股票数', structure_candidate_stocks: '结构候选股票数',
+    emotion_candidate_stocks: '情绪候选股票数', structure_covered_stocks: '结构覆盖股票数',
+    emotion_covered_stocks: '情绪覆盖股票数', structure_coverage_ratio: '结构覆盖率',
+    emotion_coverage_ratio: '情绪覆盖率', dates: '观察交易日数', qualified_rows: '达标记录数',
+    unique_stocks: '去重股票数', excluded_threshold_hits: '阈值后排除记录', daily_maxima: '逐日最大值记录数',
+    market_group_maxima: '分市场最大值记录数'
+  };
+  var SOURCE_TEXT = {
+    calendar: '交易日历', daily: '日线行情', adj_factor: '复权因子', stock_basic: '股票基础资料',
+    st: 'ST 风险名单', st_coverage: 'ST 数据覆盖', bootstrap_manifest: '数据抓取清单',
+    bootstrap_failed_symbols: '抓取失败股票数', bootstrap_failed_risk_only: '仅风险数据失败股票数',
+    bootstrap_effective_failed_symbols: '有效抓取失败股票数'
+  };
+  function reasonText(reason) {
+    return REASON_TEXT[reason] || reason || '未说明';
+  }
+  function reasonCategoryText(category) {
+    return REASON_CATEGORY_TEXT[category] || category || '未分类';
+  }
+  function validationLabel(key) {
+    return VALIDATION_TEXT[key] || key;
+  }
+  function sourceLabel(key) {
+    return SOURCE_TEXT[key] || key;
+  }
+  function readableValue(value, key) {
+    if (value == null) return '—';
+    if (typeof value === 'boolean') return value ? '通过' : '未通过';
+    if (Array.isArray(value)) return value.length ? value.map(function (item) { return typeof item === 'string' ? item : JSON.stringify(item); }).join('；') : '无';
+    if (typeof value === 'object') {
+      return Object.keys(value).map(function (child) { return validationLabel(child) + '：' + readableValue(value[child], child); }).join('；');
+    }
+    if (/ratio$/.test(key || '') && typeof value === 'number') return (value * 100).toFixed(1) + '%';
+    return String(value);
+  }
+  function badge(status) {
+    var item = STATUS[status] || [status || '未知', 'plain'];
+    return '<span class="badge ' + item[1] + '">' + esc(item[0]) + '</span>';
+  }
+
+  // 终点状态：与 status（起点是否成立）分开判定，两者不可混用。
+  // 结构表 status 恒为 confirmed（起点已确认且达标），终点是否已确认必须另算。
+  var END_STATE = {
+    confirmed: ['已确认', 'good'],
+    unconfirmed: ['未确认', 'warn'],
+    na: ['不适用', 'plain']
+  };
+  function endStateOf(kind, row) {
+    if (row.status === 'rejected' || row.status === 'data_insufficient') return 'na';
+    if (kind === 'structure') return row.end_date == null ? 'unconfirmed' : 'confirmed';
+    return row.trend_end_date == null ? 'unconfirmed' : 'confirmed';
+  }
+  function endBadge(kind, row) {
+    var item = END_STATE[endStateOf(kind, row)] || END_STATE.na;
+    return '<span class="badge ' + item[1] + '">' + esc(item[0]) + '</span>';
+  }
+
+  // ---------- SVG 基础 ----------
+  var NS = 'http://www.w3.org/2000/svg';
+
+  function frame(opts) {
+    var width = opts.width || 680;
+    var height = opts.height || 200;
+    var pad = opts.pad || { l: 58, r: 18, t: 16, b: 28 };
+    var n = opts.n || 1;
+    var yMax = opts.yMax && opts.yMax > 0 ? opts.yMax : 1;
+    return {
+      width: width, height: height, pad: pad, n: n, yMax: yMax,
+      iw: width - pad.l - pad.r,
+      ih: height - pad.t - pad.b,
+      X: function (i) { return n <= 1 ? pad.l + this.iw / 2 : pad.l + i * (this.iw / (n - 1)); },
+      Y: function (v) { return pad.t + this.ih * (1 - Math.max(0, Math.min(1, v / this.yMax))); }
+    };
+  }
+
+  function axisLabels(f, dates, ticks) {
+    var out = '';
+    var step = f.yMax / 4;
+    for (var i = 0; i <= 4; i++) {
+      var value = step * i;
+      var y = f.Y(value);
+      out += '<line class="' + (i === 0 ? 'zero-line' : 'grid-line') + '" x1="' + f.pad.l + '" y1="' + y +
+        '" x2="' + (f.width - f.pad.r) + '" y2="' + y + '"/>';
+      out += '<text class="axis" x="' + (f.pad.l - 8) + '" y="' + (y + 4) + '" text-anchor="end">' +
+        (value * 100).toFixed(0) + '%</text>';
+    }
+    var count = dates.length;
+    var wanted = ticks || 7;
+    var stride = Math.max(1, Math.ceil(count / wanted));
+    for (var j = 0; j < count; j += stride) {
+      out += '<text class="axis" x="' + f.X(j) + '" y="' + (f.height - 8) + '" text-anchor="middle">' +
+        mmdd(dates[j]) + '</text>';
+    }
+    if ((count - 1) % stride !== 0 && count > 0) {
+      out += '<text class="axis" x="' + f.X(count - 1) + '" y="' + (f.height - 8) +
+        '" text-anchor="middle">' + mmdd(dates[count - 1]) + '</text>';
+    }
+    return out;
+  }
+
+  function polySegments(f, points, color, dashed, width) {
+    var segs = [], cur = [];
+    for (var i = 0; i < points.length; i++) {
+      var v = points[i];
+      if (v == null) { if (cur.length) { segs.push(cur); cur = []; } continue; }
+      cur.push([f.X(i), f.Y(v)]);
+    }
+    if (cur.length) segs.push(cur);
+    var out = '';
+    segs.forEach(function (seg) {
+      if (seg.length === 1) {
+        out += '<circle cx="' + seg[0][0] + '" cy="' + seg[0][1] + '" r="2.5" fill="' + color + '"/>';
+        return;
+      }
+      out += '<polyline fill="none" stroke="' + color + '" stroke-width="' + (width || 2) +
+        '" stroke-linejoin="round" stroke-linecap="round"' +
+        (dashed ? ' stroke-dasharray="5 4"' : '') +
+        ' points="' + seg.map(function (p) { return p[0].toFixed(1) + ',' + p[1].toFixed(1); }).join(' ') + '"/>';
+    });
+    return out;
+  }
+
+  function dots(f, points, color, dates) {
+    dates = dates || (DATA.pool_trends && DATA.pool_trends.x) || [];
+    var out = '';
+    for (var i = 0; i < points.length; i++) {
+      if (points[i] == null) continue;
+      out += '<circle cx="' + f.X(i).toFixed(1) + '" cy="' + f.Y(points[i]).toFixed(1) +
+        '" r="2.6" fill="#fff" stroke="' + color + '" stroke-width="1.6"><title>' +
+        mmdd(dates[i]) + ' ' + pct(points[i]) + '</title></circle>';
+    }
+    return out;
+  }
+
+  function signalCandles(f, points, marketGroup) {
+    var out = '';
+    var bodyWidth = Math.max(4, Math.min(10, f.iw / Math.max(1, points.length) * 0.56));
+    for (var i = 0; i < points.length; i++) {
+      var p = points[i];
+      var signal = marketGroup ? ((p && p.market_candle_signals) || {})[marketGroup] : p && p.candle_signal;
+      var d = signal && signal.display;
+      if (!d || [d.open, d.high, d.low, d.close].some(function (v) { return v == null; })) continue;
+      var x = f.X(i), yO = f.Y(d.open), yH = f.Y(d.high), yL = f.Y(d.low), yC = f.Y(d.close);
+      var up = d.close >= d.open, color = up ? '#dc2626' : '#16835a';
+      var top = Math.min(yO, yC), height = Math.max(1.5, Math.abs(yC - yO));
+      var offsets = signal.return_offsets || {};
+      var base = marketGroup ? ((p.by_market || {})[marketGroup]) : p.value;
+      var scopeLabel = marketGroup || '全市场';
+      var tip = p.date + '｜' + scopeLabel + '强势股池 ' + (signal.selection_date || '—') +
+        '｜高度基准 ' + pct(base) + '｜次日表现 O ' + pct(offsets.open) +
+        ' H ' + pct(offsets.high) + ' L ' + pct(offsets.low) + ' C ' + pct(offsets.close) +
+        '｜入池 ' + (signal.selected_pool_size || signal.requested_pool_size || 0) + ' 只（达标 ' +
+        dash(signal.threshold_members) + ' / 排行补足 ' + dash(signal.rank_fill_members) + '）' +
+        '｜池中位涨幅 ' + pct(signal.pool_median_return_10d) +
+        '｜有效样本 ' + (signal.valid_pool_size || 0) + '/' + (signal.selected_pool_size || signal.requested_pool_size || 0);
+      out += '<g class="signal-candle"><title>' + esc(tip) + '</title>' +
+        '<line x1="' + x.toFixed(1) + '" y1="' + yH.toFixed(1) + '" x2="' + x.toFixed(1) +
+        '" y2="' + yL.toFixed(1) + '" stroke="' + color + '" stroke-width="1.4"/>' +
+        '<rect x="' + (x - bodyWidth / 2).toFixed(1) + '" y="' + top.toFixed(1) + '" width="' +
+        bodyWidth.toFixed(1) + '" height="' + height.toFixed(1) + '" fill="' + (up ? color : '#ffffff') +
+        '" stroke="' + color + '" stroke-width="1.4"/></g>';
+    }
+    return out;
+  }
+
+  function peakMark(f, points, color) {
+    var best = null;
+    for (var i = 0; i < points.length; i++) {
+      if (points[i] == null) continue;
+      if (!best || points[i] > best.v) best = { v: points[i], i: i };
+    }
+    if (!best) return '';
+    var x = f.X(best.i), y = f.Y(best.v);
+    return '<line x1="' + x + '" y1="' + y + '" x2="' + x + '" y2="' + (f.height - f.pad.b) +
+      '" stroke="' + color + '" stroke-width="1" stroke-dasharray="3 3" opacity="0.55"/>' +
+      '<text x="' + x + '" y="' + (y - 6) + '" text-anchor="middle" font-size="11.5" font-weight="700" fill="' +
+      color + '">' + pct(best.v) + '</text>';
+  }
+
+  // ---------- 图表容器（含 PNG 导出按钮） ----------
+  function chartBox(inner, name) {
+    return '<div class="chart-bar"><button class="png-btn" type="button" data-png="' +
+      esc(name || 'chart') + '" title="导出为 PNG 图片（2 倍分辨率）">导出 PNG</button></div>' +
+      '<div class="chart">' + inner + '</div>';
+  }
+
+  function toast(msg) {
+    var el = document.createElement('div');
+    el.className = 'toast';
+    el.textContent = msg;
+    document.body.appendChild(el);
+    setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 2600);
+  }
+
+  // 导出用的最小样式：SVG 脱离文档后 class 样式会丢失，必须内联进 <style>
+  var SVG_EXPORT_CSS = '.axis{font-size:11px;fill:#667085}' +
+    '.grid-line{stroke:#eef1f5;stroke-width:1;fill:none}' +
+    '.zero-line{stroke:#d0d5dd;stroke-width:1;fill:none}' +
+    'text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",Arial,sans-serif}';
+
+  function svgToPng(svg, fileName, scale) {
+    scale = scale || 2;
+    var vb = (svg.getAttribute('viewBox') || '').trim().split(/[\s,]+/).map(Number);
+    var w = vb[2] || svg.clientWidth || 680;
+    var h = vb[3] || svg.clientHeight || 240;
+    var NS = 'http://www.w3.org/2000/svg';
+    var clone = svg.cloneNode(true);
+    clone.setAttribute('xmlns', NS);
+    clone.setAttribute('width', w);
+    clone.setAttribute('height', h);
+
+    var style = document.createElementNS(NS, 'style');
+    style.textContent = SVG_EXPORT_CSS;
+    clone.insertBefore(style, clone.firstChild);
+
+    var bg = document.createElementNS(NS, 'rect');
+    bg.setAttribute('x', '0');
+    bg.setAttribute('y', '0');
+    bg.setAttribute('width', w);
+    bg.setAttribute('height', h);
+    bg.setAttribute('fill', '#ffffff');
+    clone.insertBefore(bg, clone.firstChild.nextSibling);
+
+    var markup = new XMLSerializer().serializeToString(clone);
+    var src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(markup);
+
+    return new Promise(function (resolve, reject) {
+      var img = new Image();
+      img.onload = function () {
+        try {
+          var canvas = document.createElement('canvas');
+          canvas.width = Math.round(w * scale);
+          canvas.height = Math.round(h * scale);
+          var ctx = canvas.getContext('2d');
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          if (canvas.toBlob) {
+            canvas.toBlob(function (blob) {
+              if (!blob) { reject(new Error('toBlob 返回空')); return; }
+              download(blob, fileName);
+              resolve('blob');
+            }, 'image/png');
+          } else {
+            var dataUrl = canvas.toDataURL('image/png');
+            var a = document.createElement('a');
+            a.href = dataUrl;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            resolve('dataurl');
+          }
+        } catch (err) { reject(err); }
+      };
+      img.onerror = function () { reject(new Error('SVG 解析失败')); };
+      img.src = src;
+    });
+  }
+
+  function download(blob, fileName) {
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+  }
+
+  function pngFileName(name) {
+    var view = (VIEWS.filter(function (v) { return v.id === STATE.view; })[0] || {}).label || '图表';
+    var end = (DATA.meta && DATA.meta.date_end) || '';
+    return (view + '_' + (name || 'chart') + (end ? '_' + end : '')).replace(/[\\/:*?"<>|\s]+/g, '_') + '.png';
+  }
+
+  function exportChart(btn) {
+    var box = btn.closest('.chart') || (btn.parentNode && btn.parentNode.parentNode);
+    var svg = box && box.querySelector ? box.querySelector('svg.chart-svg') : null;
+    if (!svg) {
+      var wrap = btn.parentNode;
+      svg = wrap && wrap.parentNode ? wrap.parentNode.querySelector('svg.chart-svg') : null;
+    }
+    if (!svg) { toast('未找到可导出的图表'); return; }
+    btn.disabled = true;
+    svgToPng(svg, pngFileName(btn.dataset.png), 2).then(function () {
+      btn.disabled = false;
+      toast('已导出 PNG（2 倍分辨率）');
+    }).catch(function (err) {
+      btn.disabled = false;
+      toast('导出失败：' + (err && err.message ? err.message : '浏览器不支持'));
+    });
+  }
+
+  // ---------- 趋势图辅助：y 轴标题 / 对称轴 / 日变化副图 / 缩略 ----------
+  function yTitle(f, text) {
+    var cy = f.pad.t + f.ih / 2;
+    return '<text class="axis" transform="rotate(-90 12 ' + cy + ')" x="12" y="' + cy +
+      '" text-anchor="middle" font-size="11">' + esc(text) + '</text>';
+  }
+
+  // 参考线：100/200/300/400%…（比例 1,2,3,4…），只画 <= 数据实际最大值的档位
+  function maxFinite(values) {
+    var m = null;
+    for (var i = 0; i < values.length; i++) {
+      if (values[i] != null && (m == null || values[i] > m)) m = values[i];
+    }
+    return m == null ? 0 : m;
+  }
+
+  // 参考线（横线部分）：100/200/300/400%…（比例 1,2,3,4…），只画 <= 数据实际最大值的档位
+  function refTiers(f, dataMax) {
+    var out = '';
+    for (var tier = 1; tier <= 8; tier++) {
+      if (tier > dataMax + 1e-9) break;
+      var y = f.Y(tier);
+      if (y < f.pad.t - 0.5) continue;
+      out += '<line x1="' + f.pad.l + '" y1="' + y.toFixed(1) + '" x2="' + (f.width - f.pad.r) +
+        '" y2="' + y.toFixed(1) + '" stroke="#a78bfa" stroke-width="1" stroke-dasharray="4 4" opacity="0.75"/>';
+    }
+    return out;
+  }
+
+  // 参考线标签：必须画在折线之后，否则会被数据线盖住；白底衬保证压线也能读
+  function refTierLabels(f, dataMax) {
+    var out = '';
+    for (var tier = 1; tier <= 8; tier++) {
+      if (tier > dataMax + 1e-9) break;
+      var y = f.Y(tier);
+      if (y < f.pad.t - 0.5) continue;
+      var tx = f.width - f.pad.r - 2;
+      out += '<rect x="' + (tx - 30).toFixed(1) + '" y="' + (y - 11.5).toFixed(1) +
+        '" width="30" height="10.5" rx="2" fill="#ffffff" opacity="0.88"/>' +
+        '<text x="' + tx + '" y="' + (y - 3).toFixed(1) +
+        '" text-anchor="end" font-size="9.5" font-weight="600" fill="#7c3aed">' + (tier * 100) + '%</text>';
+    }
+    return out;
+  }
+
+  function changeFrame(opts) {
+    var width = opts.width || 680;
+    var height = opts.height || 104;
+    var pad = opts.pad || { l: 58, r: 18, t: 12, b: 22 };
+    var n = opts.n || 1;
+    var yMax = opts.yMax, yMin = opts.yMin != null ? opts.yMin : -yMax;
+    var iw = width - pad.l - pad.r, ih = height - pad.t - pad.b;
+    return {
+      width: width, height: height, pad: pad, n: n, yMax: yMax, yMin: yMin, iw: iw, ih: ih,
+      X: function (i) { return n <= 1 ? pad.l + iw / 2 : pad.l + i * (iw / (n - 1)); },
+      Y: function (v) { return pad.t + ih * (1 - (v - yMin) / (yMax - yMin)); }
+    };
+  }
+
+  function changeChart(f, dates, changes, threshold) {
+    var zw = f.Y(0);
+    var out = '<line class="zero-line" x1="' + f.pad.l + '" y1="' + zw.toFixed(1) +
+      '" x2="' + (f.width - f.pad.r) + '" y2="' + zw.toFixed(1) + '"/>';
+    [f.yMax, 0, f.yMin].forEach(function (v) {
+      var y = f.Y(v);
+      out += '<line class="' + (v === 0 ? 'zero-line' : 'grid-line') + '" x1="' + f.pad.l +
+        '" y1="' + y.toFixed(1) + '" x2="' + (f.width - f.pad.r) + '" y2="' + y.toFixed(1) + '"/>';
+      out += '<text class="axis" x="' + (f.pad.l - 8) + '" y="' + (y + 4).toFixed(1) +
+        '" text-anchor="end">' + (v * 100).toFixed(0) + '%</text>';
+    });
+    for (var i = 0; i < changes.length; i++) {
+      var v = changes[i];
+      if (v == null) continue;
+      var x = f.X(i), y = f.Y(v), up = v > 0;
+      var color = v <= threshold ? '#991b1b' : (up ? '#dc2626' : '#16835a');
+      var top = Math.min(y, zw), hgt = Math.max(0.5, Math.abs(y - zw));
+      out += '<rect x="' + (x - 2.2).toFixed(1) + '" y="' + top.toFixed(1) +
+        '" width="4.4" height="' + hgt.toFixed(1) + '" fill="' + color +
+        '"><title>' + esc(dates[i]) + ' 变化 ' + signed(v) + '</title></rect>';
+      if (v <= threshold) {
+        out += '<text x="' + x.toFixed(1) + '" y="' + (up ? y + 12 : y - 5).toFixed(1) +
+          '" text-anchor="middle" font-size="10" font-weight="700" fill="#991b1b">断档</text>';
+      }
+    }
+    return out;
+  }
+
+  function heightSpark(h) {
+    if (!h || !h.points) return '';
+    var dates = h.points.map(function (p) { return p.date; });
+    var values = h.points.map(function (p) { return p.value; });
+    var maxes = values.filter(function (v) { return v != null; });
+    var yMax = maxes.length ? Math.max.apply(null, maxes) * 1.12 : 1;
+    var f = frame({ n: dates.length, yMax: yMax, height: 130, pad: { l: 46, r: 14, t: 12, b: 22 } });
+    var body = axisLabels(f, dates, 6) + polySegments(f, values, '#dc2626', false, 1.8) +
+      dots(f, values, '#dc2626', dates) + peakMark(f, values, '#dc2626');
+    return chartBox('<svg class="chart-svg" viewBox="0 0 ' + f.width + ' ' + f.height +
+      '" role="img"><title>高度走势缩略</title>' + body + '</svg>', '高度走势缩略');
+  }
+
+  // ---------- 视图：概览 ----------
+  function viewSummary() {
+    var s = DATA.summary, m = DATA.meta;
+    var cards = (s.cards || []).map(function (c) {
+      return '<div class="card"><small>' + esc(c.label) + '</small><b>' + esc(c.value) + '</b>' +
+        (c.hint ? '<small>' + esc(c.hint) + '</small>' : '') + '</div>';
+    }).join('');
+
+    var contract = '<div class="kv">' +
+      kv('契约版本', DATA.contract_version || '—') +
+      kv('区间涨幅', (m.return_days || 10) + ' 日') +
+      kv('达标阈值', pct(m.threshold, 0)) +
+      kv('数据窗口', dash(m.date_start) + ' 至 ' + dash(m.date_end)) +
+      kv('装配模式', modeText()) +
+      '</div>';
+
+    return '<section class="panel" id="v-summary"><h2>情绪结论</h2>' +
+      '<p class="muted">结论由契约数据直接呈现，SPA 不做二次指标计算。</p>' +
+      '<div class="grid">' + cards + '</div>' +
+      '<h3>高度走势（缩略）</h3>' + heightSpark(DATA.height) +
+      '<h3>情绪指标（全市场 / 分市场 × 三种口径）</h3>' + emotionMetricSummary(DATA.pool_trends) +
+      '<h3>契约信息</h3>' + contract +
+      (m.warning ? '<div class="callout"><strong>数据局限：</strong>' + esc(m.warning) + '</div>' : '') +
+      '</section>';
+  }
+
+  function kv(k, v) { return '<div><b>' + esc(k) + '</b>' + esc(v) + '</div>'; }
+
+  function emotionMetricSummary(pool) {
+    var metrics = pool && pool.emotion_metrics;
+    if (!metrics) return '<div class="empty">无分市场情绪指标</div>';
+    var labels = { t1: 'T1 固定10日', t2: 'T2 严格底分型', t3: 'T3 首板情绪' };
+    var scopes = [{ key: 'all', label: '全市场', data: metrics.all }].concat(Object.keys(metrics.by_market || {}).map(function (name) {
+      return { key: name, label: name, data: metrics.by_market[name] };
+    }));
+    var rows = scopes.map(function (scope) {
+      return Object.keys(labels).map(function (key) {
+        var item = (scope.data || {})[key] || {};
+        return '<tr><td>' + esc(scope.label) + '</td><td>' + labels[key] + '</td><td class="num up">' + pct(item.peak) + '</td><td>' + dash(item.peak_date) + '</td><td class="num up">' + pct(item.current) + '</td><td>' + dash(item.current_date) + '</td><td class="num">' + dash(item.available_days) + '</td></tr>';
+      }).join('');
+    }).join('');
+    return '<div class="callout">区间最高与当前最高按“市场范围 + 统计口径”独立计算；全市场不等于任一单一市场，当前值均取观察窗口最后一个交易日。</div><div class="table-wrap"><table><thead><tr><th>市场范围</th><th>统计口径</th><th>区间最高</th><th>最高日期</th><th>当前最高</th><th>当前日期</th><th>有效交易日</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+  }
+
+  function validationTable(obj) {
+    if (!obj || !Object.keys(obj).length) return '<div class="empty">无校验记录</div>';
+    var rows = Object.keys(obj).map(function (k) {
+      return '<tr><td><strong>' + esc(validationLabel(k)) + '</strong></td><td>' + esc(readableValue(obj[k], k)) + '</td></tr>';
+    }).join('');
+    return '<div class="table-wrap"><table><thead><tr><th>校验项目</th><th>结果（中文说明）</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+  }
+
+  function modeText() {
+    return BOOT.mode === 'embedded' ? '单文件内嵌' : BOOT.mode === 'external' ? '外部 REPORT_DATA' : '未注入';
+  }
+
+  // ---------- 视图：高度趋势 ----------
+  function viewHeight() {
+    var h = DATA.height;
+    var dates = h.points.map(function (p) { return p.date; });
+    var values = h.points.map(function (p) { return p.value; });
+    var groups = h.market_groups || [];
+    var candleExtremes = [];
+    h.points.forEach(function (p) {
+      var d = p.candle_signal && p.candle_signal.display;
+      if (d) candleExtremes.push(d.open, d.high, d.low, d.close);
+      groups.forEach(function (g) {
+        var gd = p.market_candle_signals && p.market_candle_signals[g] && p.market_candle_signals[g].display;
+        if (gd) candleExtremes.push(gd.open, gd.high, gd.low, gd.close);
+      });
+    });
+    var maxes = values.concat(candleExtremes).concat.apply(values.concat(candleExtremes), groups.map(function (g) {
+      return h.points.map(function (p) { return (p.by_market || {})[g]; });
+    })).filter(function (v) { return v != null; });
+    var yMax = maxes.length ? Math.max.apply(null, maxes) * 1.18 : 1;
+
+    var f = frame({ n: dates.length, yMax: yMax, height: 230 });
+    var svg = '<svg class="chart-svg" viewBox="0 0 ' + f.width + ' ' + f.height + '" role="img">' +
+      '<title>全市场每日 10 日涨幅最大值走势</title>' +
+      axisLabels(f, dates) + refTiers(f, maxFinite(values)) + yTitle(f, '10日涨幅最大值') +
+      polySegments(f, values, '#94a3b8', false, 1.2) + signalCandles(f, h.points) +
+      peakMark(f, values, '#dc2626') + refTierLabels(f, maxFinite(values)) +
+      '</svg>';
+
+    var changes = h.points.map(function (p) { return p.change; });
+    var chgAbs = changes.filter(function (v) { return v != null; }).map(Math.abs);
+    var chgMax = (chgAbs.length ? Math.max.apply(null, chgAbs) : 0.1) * 1.15 + 0.001;
+    var cf = changeFrame({ n: dates.length, yMax: chgMax, height: 104 });
+    var changeSvg = '<svg class="chart-svg" viewBox="0 0 ' + cf.width + ' ' + cf.height + '" role="img">' +
+      '<title>每日高度变化（红涨绿跌，骤降即断档）</title>' + yTitle(cf, '日变化') +
+      changeChart(cf, dates, changes, -0.20) + '</svg>';
+
+    var groupSvgs = groups.map(function (g) {
+      var series = h.points.map(function (p) { return (p.by_market || {})[g]; });
+      var has = series.some(function (v) { return v != null; });
+      var fg = frame({ n: dates.length, yMax: yMax, height: 150 });
+      var body = axisLabels(fg, dates, 5) + polySegments(fg, series, '#94a3b8', false, 1.2) +
+        signalCandles(fg, h.points, g) + peakMark(fg, series, '#dc2626');
+      return '<div><div class="legend"><span><i style="background:#94a3b8"></i>' + esc(g) + '高度基准</span>' +
+        '<span><i style="background:#dc2626"></i>昨日强势股今日表现K线</span>' +
+        (has ? '' : '<span>（本窗口无达标股）</span>') + '</div>' +
+        chartBox('<svg class="chart-svg" viewBox="0 0 ' + fg.width + ' ' + fg.height + '" role="img"><title>' +
+          esc(g) + ' 每日最大值与昨日强势股次日表现</title>' + body + '</svg>', g + '_昨日强势股次日表现K线') + '</div>';
+    }).join('');
+
+    return '<section class="panel" id="v-height"><h2>高度趋势</h2>' +
+      '<p class="muted">每根K线的位置基准为每日全市场 ' + (DATA.meta.return_days || 10) +
+      ' 日涨幅最大值，Y轴仍表示10日涨幅高度；全市场、沪深主板、科创成长板分别在各自范围内，于前一交易日收盘后确定强势股池并固定：该范围 10 日涨幅达标的股票全部收入，另加涨幅排名前' + (DATA.meta.rank_leg_size || 10) +
+      '只（达标不足此数时由排名补足）。红/绿K线实体与影线编码各自昨日强势股今日相对昨收的等权平均OHLC收益偏移，不代表真实10日涨幅OHLC；每张图的灰线均连接其对应范围的高度基准。' +
+      '共用 y 轴上界 ' + pct(yMax, 0) + '，可与<a href="#/pool" class="inlink">达标股能涨多高</a>比高矮。' +
+      '下方副图为每日高度变化（红涨绿跌，向下骤降即「断档」）。</p>' +
+      '<div style="margin-top:12px">' + chartBox(svg, '全市场每日最大值') + '</div>' +
+      '<div style="margin-top:6px">' + chartBox(changeSvg, '每日高度变化') + '</div>' +
+      '<h3>分市场</h3>' + (groupSvgs || '<div class="empty">无市场分组数据</div>') +
+      '</section>';
+  }
+
+  // ---------- 视图：涨停连板 ----------
+  var LADDER_BUCKETS = [
+    { label: '1 板', idx: 0, color: '#fecaca' },
+    { label: '2 板', idx: 1, color: '#fca5a5' },
+    { label: '3 板', idx: 2, color: '#f87171' },
+    { label: '4 板', idx: 3, color: '#ef4444' },
+    { label: '5 板+', idx: 4, color: '#b91c1c' }
+  ];
+
+  function ladderBucket(boards) {
+    var n = parseInt(boards, 10);
+    if (!n || n < 1) return 0;
+    if (n >= 5) return 4;
+    return n - 1;
+  }
+
+  function bucketCounts(point) {
+    var out = [0, 0, 0, 0, 0];
+    var byBoards = (point && point.by_boards) || {};
+    Object.keys(byBoards).forEach(function (key) {
+      var n = parseInt(key, 10);
+      if (!n || n < 1) return;
+      var value = byBoards[key];
+      if (typeof value === 'number') out[ladderBucket(n)] += value;
+    });
+    return out;
+  }
+
+  // 计数轴的刻度和百分比轴不同：这里绝不能 ×100
+  function dateTicks(f, dates, ticks) {
+    var out = '';
+    var count = dates.length;
+    var wanted = ticks || 7;
+    var stride = Math.max(1, Math.ceil(count / wanted));
+    for (var j = 0; j < count; j += stride) {
+      out += '<text class="axis" x="' + f.X(j) + '" y="' + (f.height - 8) + '" text-anchor="middle">' +
+        mmdd(dates[j]) + '</text>';
+    }
+    if (count > 0 && (count - 1) % stride !== 0) {
+      out += '<text class="axis" x="' + f.X(count - 1) + '" y="' + (f.height - 8) +
+        '" text-anchor="middle">' + mmdd(dates[count - 1]) + '</text>';
+    }
+    return out;
+  }
+
+  function countAxis(f, dates, ticks) {
+    var out = '';
+    var step = f.yMax / 4;
+    for (var i = 0; i <= 4; i++) {
+      var value = step * i;
+      var y = f.Y(value);
+      out += '<line class="' + (i === 0 ? 'zero-line' : 'grid-line') + '" x1="' + f.pad.l + '" y1="' + y +
+        '" x2="' + (f.width - f.pad.r) + '" y2="' + y + '"/>';
+      out += '<text class="axis" x="' + (f.pad.l - 8) + '" y="' + (y + 4) + '" text-anchor="end">' +
+        Math.round(value) + '</text>';
+    }
+    return out + dateTicks(f, dates, ticks);
+  }
+
+  function stackedBars(f, points, dates) {
+    var n = points.length;
+    var slot = f.iw / Math.max(1, n);
+    var bw = Math.max(3, Math.min(20, slot * 0.62));
+    var out = '';
+    for (var i = 0; i < n; i++) {
+      var point = points[i];
+      if (!point || point.total == null) continue;
+      var counts = bucketCounts(point);
+      var x = f.X(i) - bw / 2;
+      var acc = 0;
+      for (var b = 0; b < LADDER_BUCKETS.length; b++) {
+        var c = counts[b];
+        if (!c) continue;
+        var y0 = f.Y(acc);
+        var y1 = f.Y(acc + c);
+        var h = y0 - y1;
+        acc += c;
+        if (h > 0.4) {
+          out += '<rect x="' + x.toFixed(1) + '" y="' + y1.toFixed(1) + '" width="' + bw.toFixed(1) +
+            '" height="' + h.toFixed(1) + '" fill="' + LADDER_BUCKETS[b].color + '" rx="1"><title>' +
+            mmdd(dates[i]) + ' ' + LADDER_BUCKETS[b].label + ' ' + c + ' 家 / 涨停合计 ' + point.total +
+            '</title></rect>';
+        }
+      }
+      out += '<text x="' + f.X(i).toFixed(1) + '" y="' + (f.Y(acc) - 4).toFixed(1) +
+        '" text-anchor="middle" font-size="9.5" fill="#667085">' + point.total + '</text>';
+    }
+    return out;
+  }
+
+  function bucketLegend() {
+    return '<div class="legend">' + LADDER_BUCKETS.map(function (b) {
+      return '<span><i style="background:' + b.color + ';height:10px;width:10px;border-radius:3px"></i>' +
+        b.label + '</span>';
+    }).join('') + '</div>';
+  }
+
+  function viewLimitUp() {
+    var lu = DATA.limit_up;
+    if (!lu || !(lu.points || []).length) {
+      return '<section class="panel" id="v-ladder"><h2>涨停连板</h2>' +
+        '<div class="callout">本次未产出涨停连板数据（<code>limit_up</code> 为 null）。' +
+        '需先运行 <code>calculate_limit_up_ladder.py</code> 并带 <code>--limit-up-ladder</code> 重建报告。</div>' +
+        '</section>';
+    }
+
+    var points = lu.points;
+    var dates = points.map(function (p) { return p.date; });
+    var totals = points.map(function (p) { return p.total; });
+    var consec = points.map(function (p) { return p.consecutive; });
+    var maxBoard = points.map(function (p) { return p.max_boards; });
+    var known = points.filter(function (p) { return p.total != null; });
+    var latest = known[known.length - 1] || {};
+    var scope = lu.scope || {};
+    var window = lu.window || {};
+
+    var ratioText = latest.consecutive_ratio == null ? '—' : (latest.consecutive_ratio * 100).toFixed(1) + '%';
+    var cards = [
+      { label: '涨停家数', value: latest.total == null ? '—' : String(latest.total), hint: (latest.date || '—') + ' 收盘涨停' },
+      { label: '连板家数', value: latest.consecutive == null ? '—' : String(latest.consecutive), hint: '二板及以上，占涨停 ' + ratioText },
+      { label: '最高连板', value: latest.max_boards == null ? '—' : latest.max_boards + ' 板', hint: '首板 ' + (latest.first_board == null ? '—' : latest.first_board) + ' 家' },
+      { label: '涨停环比', value: latest.total_change == null ? '—' : (latest.total_change > 0 ? '+' : '') + latest.total_change, hint: '较前一交易日家数变化' }
+    ].map(function (c) {
+      return '<div class="card"><small>' + esc(c.label) + '</small><b>' + esc(c.value) + '</b>' +
+        '<small>' + esc(c.hint) + '</small></div>';
+    }).join('');
+
+    var maxTotal = 0;
+    totals.forEach(function (v) { if (v != null && v > maxTotal) maxTotal = v; });
+    var f1 = frame({ n: dates.length, yMax: Math.max(4, maxTotal * 1.16), height: 240 });
+    var svgStack = '<svg class="chart-svg" viewBox="0 0 ' + f1.width + ' ' + f1.height + '" role="img">' +
+      '<title>每日涨停家数（按板数分层）</title>' + countAxis(f1, dates) + yTitle(f1, '涨停家数') +
+      stackedBars(f1, points, dates) + '</svg>';
+
+    var maxConsec = 0;
+    consec.forEach(function (v) { if (v != null && v > maxConsec) maxConsec = v; });
+    var f2 = frame({ n: dates.length, yMax: Math.max(4, maxConsec * 1.18), height: 150 });
+    var svgConsec = '<svg class="chart-svg" viewBox="0 0 ' + f2.width + ' ' + f2.height + '" role="img">' +
+      '<title>每日连板家数（二板及以上）</title>' + countAxis(f2, dates, 5) + yTitle(f2, '连板家数') +
+      polySegments(f2, consec, '#b91c1c', false, 2) + dots(f2, consec, '#b91c1c', dates) + '</svg>';
+
+    var maxB = 0;
+    maxBoard.forEach(function (v) { if (v != null && v > maxB) maxB = v; });
+    var f3 = frame({ n: dates.length, yMax: Math.max(3, maxB * 1.2), height: 150 });
+    var svgMax = '<svg class="chart-svg" viewBox="0 0 ' + f3.width + ' ' + f3.height + '" role="img">' +
+      '<title>每日最高连板数</title>' + countAxis(f3, dates, 5) + yTitle(f3, '最高板数') +
+      polySegments(f3, maxBoard, '#7c3aed', false, 2) + dots(f3, maxBoard, '#7c3aed', dates) + '</svg>';
+
+    var selected = STATE.ladderDate && points.some(function (p) { return p.date === STATE.ladderDate; })
+      ? STATE.ladderDate : (latest.date || '');
+    var selectedPoint = points.filter(function (p) { return p.date === selected; })[0] || null;
+
+    var dailyRows = points.slice().reverse().map(function (p) {
+      var cls = p.total_change == null ? '' : p.total_change > 0 ? 'up' : p.total_change < 0 ? 'down' : '';
+      var active = p.date === selected ? ' style="background:#fff7f3"' : '';
+      return '<tr data-ladder-date="' + esc(p.date) + '"' + active + '>' +
+        '<td>' + esc(p.date) + '</td>' +
+        '<td class="num">' + dash(p.total) + '</td>' +
+        '<td class="num">' + dash(p.first_board) + '</td>' +
+        '<td class="num">' + dash(p.consecutive) + '</td>' +
+        '<td class="num">' + (p.max_boards == null ? '—' : p.max_boards + ' 板') + '</td>' +
+        '<td class="num ' + cls + '">' + (p.total_change == null ? '—' : (p.total_change > 0 ? '+' : '') + p.total_change) + '</td>' +
+        '<td class="num">' + dash(p.unknown_rows) + '</td></tr>';
+    }).join('');
+
+    var ladder = (selectedPoint && selectedPoint.ladder) || [];
+    var ladderRows = ladder.map(function (row) {
+      return '<tr><td class="num"><strong>' + esc(row.boards) + ' 板</strong></td>' +
+        '<td>' + esc(row.code) + '</td>' +
+        '<td><strong>' + esc(row.name) + '</strong></td>' +
+        '<td>' + dash(row.market) + '</td></tr>';
+    }).join('');
+
+    var groups = lu.market_groups || [];
+    var groupRows = groups.map(function (g) {
+      var value = selectedPoint && selectedPoint.by_market ? selectedPoint.by_market[g] : null;
+      return '<div><b>' + esc(g) + '</b>' + dash(value) + ' 家</div>';
+    }).join('');
+
+    var limitations = [];
+    if (window.lower_bound_before) {
+      limitations.push('连板数为「连续收盘涨停」的连续长度；' + window.lower_bound_before +
+        ' 及以前没有更早的缓存行，该日连板只能视为下限。');
+    }
+    if (scope.basis) limitations.push(scope.basis + '。');
+    if (scope.st_ratio_note) limitations.push(scope.st_ratio_note + '。');
+    if (scope.missing_note) limitations.push(scope.missing_note + '。');
+    limitations.push('本指标只反映收盘涨停，不识别盘中触板后炸板、封板时间与封单金额。');
+
+    return '<section class="panel" id="v-ladder"><h2>涨停连板</h2>' +
+      '<p class="muted">每日收盘涨停家数、二板及以上家数与最高连板。口径：' +
+      esc((scope.markets || []).join(' / ') || '沪深主板 / 创业板 / 科创板') +
+      '，排除 ST 与上市不足 ' + esc(scope.min_listing_days == null ? 60 : scope.min_listing_days) +
+      ' 个自然日的次新股，不含北交所。</p>' +
+      '<div class="grid">' + cards + '</div>' +
+      '<h3>每日涨停家数（按板数分层）</h3>' + bucketLegend() +
+      '<div style="margin-top:6px">' + chartBox(svgStack, '每日涨停家数_按板数分层') + '</div>' +
+      '<div class="grid3">' +
+      '<div><h3 style="margin-top:14px">连板家数</h3>' + chartBox(svgConsec, '每日连板家数') + '</div>' +
+      '<div><h3 style="margin-top:14px">最高连板</h3>' + chartBox(svgMax, '每日最高连板') + '</div>' +
+      '<div><h3 style="margin-top:14px">' + esc(selected || '—') + ' 市场分布</h3>' +
+      '<div class="kv">' + (groupRows || '<div><b>无数据</b>—</div>') + '</div></div>' +
+      '</div>' +
+      '<h3>' + esc(selected || '—') + ' 连板梯队</h3>' +
+      '<p class="muted">仅列出板数 ≥ ' + esc(scope.ladder_min_boards == null ? 2 : scope.ladder_min_boards) +
+      ' 的个股；点击下方任一日期可切换。</p>' +
+      '<div class="table-wrap"><table><thead><tr><th>板数</th><th>代码</th><th>名称</th><th>市场</th></tr></thead><tbody>' +
+      (ladderRows || '<tr><td colspan="4">当日无二板及以上个股</td></tr>') + '</tbody></table></div>' +
+      (selectedPoint && selectedPoint.ladder_truncated
+        ? '<div class="callout">当日梯队明细已截断，仅展示部分个股。</div>' : '') +
+      '<h3>每日明细</h3>' +
+      '<p class="muted">按日期倒序；连板数为空表示该日无数据（保留为一行，不删除）；' +
+      '「未知」为当日缺行或涨停状态无法判定的股票数，不等于未涨停。</p>' +
+      '<div class="table-wrap"><table><thead><tr><th>日期</th><th>涨停</th><th>首板</th><th>连板</th>' +
+      '<th>最高</th><th>环比</th><th>未知</th></tr></thead><tbody>' +
+      (dailyRows || '<tr><td colspan="7">无数据</td></tr>') + '</tbody></table></div>' +
+      '<div class="callout"><strong>口径与限制：</strong>' + esc(limitations.join(' ')) + '</div>' +
+      '</section>';
+  }
+
+  function poolEvidenceCell(item, label, isMax) {
+    var reason = '';
+    if (item && item.status === 'unavailable') {
+      var cls = item.reason_category === 'data_gap' ? 'warn' : 'plain';
+      reason = '<div>' + '<span class="badge ' + cls + '">' + esc(item.reason_category || 'unavailable') + '</span>' +
+        '<div class="muted" style="font-size:11px">' + esc(reasonText(item.reason_code || item.reason)) + '</div></div>';
+    }
+    var maxBadge = isMax ? '<span class="badge good">当日最大</span>' : '';
+    return '<div><strong>' + esc(label) + '</strong> ' + maxBadge + '<br><span>' + dash(item && item.start_date) + ' → ' + dash(item && item.end_date) + '</span><br><span class="num ' + (item && item.gain != null ? 'up' : '') + '">' + pct(item && item.gain) + '</span>' + reason + '</div>';
+  }
+
+  function dailyMetricLabel(key) {
+    return { all: '全部口径', t1: 'T1 固定10日', t2: 'T2 严格底分型', t3: 'T3 首板情绪' }[key] || key;
+  }
+
+  function dailyStatsFor(snap, market) {
+    var stats = snap.stats || {};
+    if (market !== 'all' && stats.by_market && stats.by_market[market]) return stats.by_market[market];
+    return stats.all || { count: snap.count || 0, metrics: {} };
+  }
+
+  function poolChangeBadge(member) {
+    if (!member || !member.is_new_entry) return '';
+    return '<span class="pool-change new">新进</span>';
+  }
+
+  function exitMembersBox(snap, market) {
+    var items = (snap.exit_members || []).filter(function (row) {
+      return market === 'all' || row.market_group === market;
+    });
+    var compare = snap.exit_compare_date;
+    var compareStart = snap.exit_compare_start_date || compare;
+    var compareDates = snap.exit_compare_dates || [];
+    if (!compare) {
+      return '<div class="exit-box"><strong>前5个交易日内退出个股</strong><div class="muted">当前日期前暂无可比较的交易日，暂不进行退出比较。</div></div>';
+    }
+    var body = items.map(function (row) {
+      return '<div class="exit-item"><b>' + dash(row.code) + ' ' + dash(row.name) + '</b><span>' +
+        dash(row.market_group || row.market) + ' · 前5日排名 ' + dash(row.rank) + '</span><br><span class="muted">比较日 ' +
+        dash(row.compare_date) + ' · 当日 T1 ' + pct(row.t1_gain) + '</span></div>';
+    }).join('');
+    return '<details class="exit-box" open><summary>前5个交易日内退出个股（比较 ' + esc(compareStart) + ' 至 ' + esc(compare) + ' → ' + esc(snap.date) + '，共 ' + items.length + ' 只）</summary>' +
+      '<div class="muted" style="margin-top:6px">退出定义：前 5 个交易日内任意一天进入过强势股票池，但当前观察日已不在池内；当前窗口实际比较 ' + esc(compareDates.join('、')) + '，按当前市场筛选过滤。</div>' +
+      '<div class="exit-grid">' + (body || '<div class="muted">当前筛选市场无退出个股。</div>') + '</div></details>';
+  }
+
+  function windowReasonSummary(scope, metric) {
+    var keys = metric === 'all' ? ['t1', 't2', 't3'] : [metric];
+    var categoryEvents = {}, reasonEvents = {}, stocks = {};
+    keys.forEach(function (key) {
+      var item = (scope.metrics || {})[key] || {};
+      Object.keys(item.reason_category_event_counts || {}).forEach(function (name) { categoryEvents[name] = (categoryEvents[name] || 0) + item.reason_category_event_counts[name]; });
+      Object.keys(item.reason_event_counts || {}).forEach(function (name) { reasonEvents[name] = (reasonEvents[name] || 0) + item.reason_event_counts[name]; });
+      (item.items || []).forEach(function (row) { stocks[row.ts_code || row.code] = row; });
+    });
+    var cats = Object.keys(categoryEvents).map(function (name) { return '<span class="tag">' + esc(reasonCategoryText(name)) + ' ' + categoryEvents[name] + ' 次事件</span>'; }).join('');
+    var reasons = Object.keys(reasonEvents).map(function (name) { return '<tr><td>' + esc(reasonText(name)) + '</td><td class="num">' + reasonEvents[name] + ' 次</td></tr>'; }).join('');
+    var items = Object.keys(stocks).sort(function (a, b) { return (stocks[b].occurrence_count || 0) - (stocks[a].occurrence_count || 0); }).map(function (key) {
+      var row = stocks[key];
+      var reasons = Object.keys(row.reason_counts || {}).map(function (name) { return reasonText(name) + '（' + row.reason_counts[name] + '次）'; }).join('、');
+      var categories = (row.reason_categories || []).map(reasonCategoryText).join('、');
+      return '<tr><td>' + dash(row.code) + '</td><td>' + dash(row.name) + '</td><td>' + dash(row.market_group || row.market) + '</td><td class="num">' + dash(row.occurrence_count) + '</td><td>' + dash(row.first_date) + '</td><td>' + dash(row.last_date) + '</td><td>' + esc(categories) + '<small>' + esc(reasons) + '</small></td></tr>';
+    }).join('');
+    return '<div class="grid3"><div class="card"><strong>观察窗口异常分类</strong><div class="muted">按窗口累计；事件次数与去重个股分开统计</div><div style="margin-top:6px">' + (cats || '<span class="muted">无异常</span>') + '</div>' +
+      '<div class="muted" style="margin-top:8px">去重异常个股：' + Object.keys(stocks).length + ' 只</div></div>' +
+      '<div class="card" style="grid-column:span 2"><strong>观察窗口异常原因统计</strong><div class="table-wrap" style="margin-top:6px"><table><thead><tr><th>原因（中文）</th><th>事件次数</th></tr></thead><tbody>' + (reasons || '<tr><td colspan="2">无异常</td></tr>') + '</tbody></table></div></div></div>' +
+      '<details class="card" style="margin-top:12px"><summary>展开异常个股明细（窗口去重，共 ' + Object.keys(stocks).length + ' 只）</summary><div class="muted" style="margin:6px 0">默认收缩；按股票汇总整个观察窗口的异常次数、日期和中文原因。</div><div class="table-wrap"><table><thead><tr><th>代码</th><th>名称</th><th>市场</th><th>异常次数</th><th>首次</th><th>最后</th><th>原因</th></tr></thead><tbody>' + (items || '<tr><td colspan="7">无异常个股</td></tr>') + '</tbody></table></div></details>';
+  }
+
+  function viewDailyPool() {
+    var p = DATA.pool_trends || {};
+    var snapshots = p.daily_snapshots || [];
+    if (!snapshots.length) {
+      return '<section class="panel"><h2>每日强势股票池</h2><div class="empty">暂无每日强势股票池快照。</div></section>';
+    }
+    var selected = STATE.poolDate || snapshots[snapshots.length - 1].date;
+    var snap = snapshots.filter(function (x) { return x.date === selected; })[0] || snapshots[snapshots.length - 1];
+    STATE.poolDate = snap.date;
+    var options = snapshots.slice().reverse().map(function (x) {
+      return '<option value="' + esc(x.date) + '"' + (x.date === snap.date ? ' selected' : '') + '>' + esc(x.date) + '（' + x.count + ' 只）</option>';
+    }).join('');
+    var markets = ['all'].concat(Object.keys((snap.stats || {}).by_market || {}));
+    var market = STATE.dailyPoolMarket || 'all';
+    if (market !== 'all' && markets.indexOf(market) < 0) market = 'all';
+    var metric = STATE.dailyPoolMetric || 'all';
+    var availability = STATE.dailyPoolAvailability || 'all';
+    var metricKeys = metric === 'all' ? ['t1', 't2', 't3'] : [metric];
+    var members = (snap.members || []).filter(function (m) { return market === 'all' || m.market_group === market; });
+    members = members.filter(function (m) {
+      if (availability === 'all') return true;
+      var keys = metric === 'all' ? ['t1', 't2', 't3'] : [metric];
+      if (availability === 'unavailable') return keys.some(function (key) { return m[key] && m[key].status === 'unavailable'; });
+      return keys.every(function (key) { return m[key] && m[key].status === 'available'; });
+    });
+    var stats = dailyStatsFor(snap, market);
+    var windowStats = p.window_stats || {};
+    var windowScope = market === 'all' ? (windowStats.all || {}) : ((windowStats.by_market || {})[market] || {});
+    var maxima = {};
+    metricKeys.forEach(function (key) { maxima[key] = (((stats.metrics || {})[key] || {}).maxima || {}).leaders || []; });
+    function isMax(m, key) { return maxima[key].some(function (x) { return x.ts_code === m.ts_code || x.code === m.code; }); }
+    var marketTabs = markets.map(function (g) { return '<button class="fbtn' + (market === g ? ' active' : '') + '" data-daily-pool-market="' + esc(g) + '">' + esc(g === 'all' ? '全部市场' : g) + '</button>'; }).join('');
+    var metricTabs = ['all', 't1', 't2', 't3'].map(function (key) { return '<button class="fbtn' + (metric === key ? ' active' : '') + '" data-daily-pool-metric="' + key + '">' + esc(dailyMetricLabel(key)) + '</button>'; }).join('');
+    var availabilityTabs = [['all', '全部状态'], ['available', '仅可用'], ['unavailable', '仅异常']].map(function (item) { return '<button class="fbtn' + (availability === item[0] ? ' active' : '') + '" data-daily-pool-availability="' + item[0] + '">' + item[1] + '</button>'; }).join('');
+    var headers = metricKeys.map(function (key) { return '<th>' + esc(dailyMetricLabel(key)) + '证据</th>'; }).join('');
+    var rows = members.map(function (m) {
+      var evidence = metricKeys.map(function (key) { return '<td>' + poolEvidenceCell(m[key], dailyMetricLabel(key), isMax(m, key)) + '</td>'; }).join('');
+      return '<tr><td class="num">' + dash(m.rank) + '</td><td><strong>' + dash(m.code) + '</strong>' + poolChangeBadge(m) + '<small>' + dash(m.name) + '</small></td>' +
+        '<td>' + dash(m.market_group || m.market) + '</td><td class="num up">' + pct(m.t1 && m.t1.gain) + '</td>' + evidence + '</tr>';
+    }).join('');
+    return '<section class="panel" id="v-daily-pool"><h2>每日强势股票池</h2>' +
+      '<p class="subtitle" style="font-size:14px;margin:0 0 4px">按截止交易日查看当日强势股票池，支持市场、三种口径和异常状态筛选。每个口径的“当日最大”均按当前市场筛选范围重新计算。</p>' +
+      '<div class="pool-summary"><label class="muted" for="pool-date">查看截止日</label><select class="pool-date" id="pool-date" data-pool-date>' + options + '</select>' +
+      '<span class="tag">当前筛选 ' + members.length + ' / ' + snap.count + ' 只</span><span class="tag">阈值 ' + pct(DATA.meta.threshold, 0) + '</span></div>' +
+      '<div class="toolbar"><span class="muted">市场：</span>' + marketTabs + '</div><div class="toolbar"><span class="muted">口径：</span>' + metricTabs + '<span class="muted">状态：</span>' + availabilityTabs + '</div>' +
+      windowReasonSummary(windowScope, metric) +
+      '<div class="callout">T1 起点为该股 T-10 个交易日前；T2 起点为截至当日最近已确认严格底分型的真实最低价；T3 起点为截至当日仍有效的首板情绪波段首板日。所有起点只使用截止日及以前的信息。异常原因按选定市场与口径汇总；“当日最大”允许并列。股票旁标记“新进”表示相比前一交易日首次进入强势池。</div>' +
+      '<div class="table-wrap"><table><thead><tr><th>排名</th><th>股票</th><th>市场</th><th>入池涨幅</th>' + headers + '</tr></thead><tbody>' +
+      (rows || '<tr><td colspan="' + (4 + metricKeys.length) + '">当前筛选条件下无股票</td></tr>') + '</tbody></table></div>' +
+      exitMembersBox(snap, market) +
+      '</section>';
+  }
+
+  // ---------- 视图：达标股三口径最大值趋势（按市场切换） ----------
+  function maxMetricTrendChart(source, dates, title) {
+    var maxSeries = source.max_series || {};
+    var points = maxSeries.points || [];
+    var finite = points.filter(function (v) { return v != null; });
+    var yMax = finite.length ? Math.max.apply(null, finite) * 1.18 : (source.y_max || 1);
+    var color = '#dc2626';
+    var f = frame({ n: dates.length, yMax: yMax, height: 250 });
+    var body = axisLabels(f, dates, 7) + refTiers(f, maxFinite(points)) + yTitle(f, 'T1/T2/T3 中的最大涨幅') +
+      polySegments(f, points, color, false, 2.4) + dots(f, points, color, dates) + peakMark(f, points, color) +
+      refTierLabels(f, maxFinite(points));
+    return '<div><div class="legend"><span><i style="background:' + color + '"></i>' + esc(maxSeries.label || '三口径最大涨幅') + '</span></div>' +
+      chartBox('<svg class="chart-svg" viewBox="0 0 ' + f.width + ' ' + f.height + '" role="img"><title>' + esc(title) + '</title>' + body + '</svg>', title) + '</div>';
+  }
+
+  function metricTrendChart(source, dates, metricKey, title) {
+    var series = (source.series || []).filter(function (s) { return s.key === metricKey; });
+    var s = series[0] || { key: metricKey, label: dailyMetricLabel(metricKey), points: [], coverage: null };
+    var points = s.points || [];
+    var finite = points.filter(function (v) { return v != null; });
+    var yMax = finite.length ? Math.max.apply(null, finite) * 1.18 : (source.y_max || 1);
+    var colors = { t1: '#98a2b3', t2: '#dc2626', t3: '#7c3aed' };
+    var color = colors[metricKey] || '#344054';
+    var f = frame({ n: dates.length, yMax: yMax, height: 250 });
+    var body = axisLabels(f, dates, 7) + refTiers(f, maxFinite(points)) + yTitle(f, '口径最大涨幅') +
+      polySegments(f, points, color, false, 2.4) + dots(f, points, color, dates) + peakMark(f, points, color) +
+      refTierLabels(f, maxFinite(points));
+    return '<div><div class="legend"><span><i style="background:' + color + '"></i>' + esc(s.label) + ' · 覆盖 ' +
+      (s.coverage == null ? '—' : s.coverage) + ' 只</span></div>' +
+      chartBox('<svg class="chart-svg" viewBox="0 0 ' + f.width + ' ' + f.height + '" role="img"><title>' + esc(title) + '</title>' + body + '</svg>', title) + '</div>';
+  }
+
+  function metricOverlayTrendChart(source, dates, title) {
+    var series = (source.series || []).filter(function (s) { return ['t1', 't2', 't3'].indexOf(s.key) >= 0; });
+    var values = [];
+    series.forEach(function (s) { values = values.concat(s.points || []); });
+    var finite = values.filter(function (v) { return v != null; });
+    var yMax = finite.length ? Math.max.apply(null, finite) * 1.18 : (source.y_max || 1);
+    var colors = { t1: '#98a2b3', t2: '#dc2626', t3: '#7c3aed' };
+    var f = frame({ n: dates.length, yMax: yMax, height: 280 });
+    var body = axisLabels(f, dates, 7) + refTiers(f, maxFinite(values)) + yTitle(f, '口径最大涨幅');
+    series.forEach(function (s) {
+      var color = colors[s.key] || '#344054';
+      body += polySegments(f, s.points || [], color, false, 2.2) + dots(f, s.points || [], color, dates) + peakMark(f, s.points || [], color);
+    });
+    body += refTierLabels(f, maxFinite(values));
+    var legend = '<div class="legend">' + series.map(function (s) {
+      return '<span><i style="background:' + (colors[s.key] || '#344054') + '"></i>' + esc(s.label) + ' · 覆盖 ' +
+        (s.coverage == null ? '—' : s.coverage) + ' 只</span>';
+    }).join('') + '</div>';
+    return legend + chartBox('<svg class="chart-svg" viewBox="0 0 ' + f.width + ' ' + f.height + '" role="img"><title>' + esc(title) + '</title>' + body + '</svg>', title);
+  }
+
+  function viewPool() {
+    var p = DATA.pool_trends;
+    if (!p || !p.series || !p.series.length || !p.max_series) {
+      return '<section class="panel"><h2>三口径趋势</h2><div class="empty">无三口径趋势数据（可能缺少前复权日线）</div></section>';
+    }
+    var x = p.x || [];
+    var groups = p.by_market ? Object.keys(p.by_market) : [];
+    var market = STATE.poolMarket || 'all';
+    var source = market === 'all' ? p : ((p.by_market || {})[market] || p);
+    var mode = STATE.poolMode || 'split';
+    var marketLabel = market === 'all' ? '全市场' : market;
+    var marketTabs = '<div class="toolbar"><span class="muted">市场范围（作用于全部趋势图）：</span>' + ['all'].concat(groups).map(function (g) {
+      var label = g === 'all' ? '全市场' : g;
+      return '<button class="fbtn' + (market === g ? ' active' : '') + '" data-poolmarket="' + esc(g) + '">' + esc(label) + '</button>';
+    }).join('') + '</div>';
+    var modeTabs = '<div class="toolbar"><span class="muted">独立趋势展示：</span>' +
+      '<button class="fbtn' + (mode === 'split' ? ' active' : '') + '" data-poolmode="split">分屏</button>' +
+      '<button class="fbtn' + (mode === 'overlay' ? ' active' : '') + '" data-poolmode="overlay">重叠</button></div>';
+    var cov = source.coverage || {};
+    var covText = '观察窗口 ' + x.length + ' 个交易日；当前市场范围池内并集 ' + dash(cov.pool_union) + ' 只。';
+    var gapWarning = ((cov.no_structure_start || 0) > 0 || (cov.no_first_board || 0) > 0)
+      ? '<div class="callout"><strong>动态覆盖说明：</strong>' + covText + ' T2/T3 当日尚未确认起点时不参与对应口径当日最大值，缺失点保留为空。</div>'
+      : '<div class="callout">' + covText + ' 所有趋势只使用截止当日已确认的信息，缺失点不以前后日期填补。</div>';
+    var winning = (source.max_series || {}).winning_metrics || [];
+    var latest = winning.length && winning[winning.length - 1] ? winning[winning.length - 1].map(function (k) { return dailyMetricLabel(k); }).join('、') : '—';
+    var independentCharts = mode === 'overlay'
+      ? metricOverlayTrendChart(source, x, marketLabel + ' T1/T2/T3 独立趋势重叠')
+      : ['t1', 't2', 't3'].map(function (key) {
+          return '<div class="trend-pane"><h4>' + esc(dailyMetricLabel(key)) + '独立趋势</h4>' +
+            metricTrendChart(source, x, key, marketLabel + ' ' + dailyMetricLabel(key) + '每日最大涨幅') + '</div>';
+        }).join('');
+    return '<section class="panel" id="v-pool"><h2>三口径趋势</h2>' +
+      '<p class="subtitle" style="font-size:14px;margin:0 0 4px">市场范围是全部趋势图的统一筛选条件：' +
+      '三口径最大值趋势单独展示；T1、T2、T3 独立趋势支持分屏或重叠展示。</p>' +
+      '<details style="margin:6px 0"><summary>统计口径定义（专业读者）</summary><p class="muted" style="margin:6px 0 0">T1：固定10日区间涨幅；T2：截至当日已确认严格底分型起点涨幅；T3：截至当日当前有效首板起点涨幅。三口径最大值趋势 = max（当日 T1 最大值、T2 最大值、T3 最大值）。市场范围切换同时作用于最大值图和独立口径图；分屏/重叠只作用于 T1、T2、T3 独立趋势。最后一个交易日最大值胜出口径：' + esc(latest) + '。</p></details>' +
+      marketTabs +
+      '<h3>' + esc(marketLabel) + '：三口径最大值趋势</h3>' +
+      maxMetricTrendChart(source, x, marketLabel + ' 每日三口径最大涨幅') +
+      '<h3 style="margin-top:20px">' + esc(marketLabel) + '：T1/T2/T3 独立趋势</h3>' + modeTabs +
+      independentCharts + gapWarning +
+      '</section>';
+  }
+
+  // ---------- 视图：逐日榜首 ----------
+  function viewLeaders() {
+    var p = DATA.pool_trends || {};
+    var rows = p.daily_leaders || [];
+    var markets = ['all'].concat(Object.keys((p.window_stats || {}).by_market || {}));
+    var market = STATE.leaderMarket || 'all';
+    var metric = STATE.leaderMetric || 't1';
+    var scopeName = market === 'all' ? 'all' : market;
+    var body = rows.slice().reverse().map(function (row, index, reversed) {
+      var scope = market === 'all' ? row.all : ((row.by_market || {})[market] || {});
+      var item = scope[metric] || { gain: null, leaders: [] };
+      var previous = reversed[index + 1];
+      var previousScope = previous ? (market === 'all' ? previous.all : ((previous.by_market || {})[market] || {})) : null;
+      var previousCodes = previousScope && previousScope[metric] ? (previousScope[metric].leaders || []).map(function (x) { return x.ts_code || x.code; }) : [];
+      var currentCodes = (item.leaders || []).map(function (x) { return x.ts_code || x.code; });
+      var changed = currentCodes.join(',') !== previousCodes.join(',');
+      var leader = item.leaders && item.leaders.length ? item.leaders.map(function (x) { return (x.name || '—') + '（' + (x.code || '—') + '）'; }).join('、') : '—';
+      var start = item.leaders && item.leaders.length ? item.leaders[0].start_date : null;
+      return '<tr><td>' + esc(row.date) + '</td><td class="num up">' + pct(item.gain) + '</td><td>' + esc(leader) + '</td><td>' + dash(start) + '</td><td>' + (changed ? '<span class="badge warn">换榜</span>' : '延续') + '</td><td class="num">' + dash((scope[metric] || {}).leaders ? (scope[metric] || {}).leaders.length : 0) + '</td></tr>';
+    }).join('');
+    var marketTabs = markets.map(function (g) { return '<button class="fbtn' + (market === g ? ' active' : '') + '" data-leader-market="' + esc(g) + '">' + esc(g === 'all' ? '全部市场' : g) + '</button>'; }).join('');
+    var metricTabs = ['t1', 't2', 't3'].map(function (key) { return '<button class="fbtn' + (metric === key ? ' active' : '') + '" data-leader-metric="' + key + '">' + esc(dailyMetricLabel(key)) + '</button>'; }).join('');
+    return '<section class="panel" id="v-leaders"><h2>逐日榜首</h2>' +
+      '<p class="muted">榜首按“市场范围 + 统计口径”独立计算；并列最大值全部保留。无可用口径的交易日仍保留。</p>' +
+      '<div class="toolbar"><span class="muted">市场：</span>' + marketTabs + '<span class="muted">口径：</span>' + metricTabs + '</div>' +
+      '<div class="table-wrap"><table><thead><tr><th>日期</th><th>最大涨幅</th><th>榜首</th><th>起点</th><th>状态</th><th>并列数</th></tr></thead><tbody>' +
+      (body || '<tr><td colspan="6">无数据</td></tr>') + '</tbody></table></div></section>';
+  }
+
+  function viewTimeline() {
+    var timeline = DATA.market_timeline || {};
+    var tag = STATE.timelineTag || 'all';
+    var points = (timeline.points || []).slice().reverse().filter(function (point) { return tag === 'all' || (point.tags || []).indexOf(tag) >= 0; });
+    var tagLabels = { height_up_breadth_down: '高度升/广度降', height_down_breadth_up: '高度降/广度升', cross_market_divergence: '市场分化', metric_divergence: '三口径分歧', limit_breadth_height_divergence: '涨停/连板背离' };
+    var allTags = {};
+    (timeline.events || []).forEach(function (point) { (point.tags || []).forEach(function (name) { allTags[name] = true; }); });
+    var tabs = ['all'].concat(Object.keys(allTags)).map(function (name) { return '<button class="fbtn' + (tag === name ? ' active' : '') + '" data-timeline-tag="' + esc(name) + '">' + esc(name === 'all' ? '全部分歧' : (tagLabels[name] || name)) + '</button>'; }).join('');
+    var body = points.map(function (point) {
+      var signals = point.signals || {};
+      var tags = (point.tags || []).map(function (name) { return '<span class="badge ' + (point.severity === 'high' ? 'warn' : 'plain') + '">' + esc(tagLabels[name] || name) + '</span>'; }).join('');
+      var marketChanges = Object.keys(signals.market_changes || {}).map(function (key) { return key + ' ' + signed(signals.market_changes[key]); }).join('、');
+      var metrics = Object.keys(signals.metric_changes || {}).map(function (key) { return key.toUpperCase() + ' ' + signed(signals.metric_changes[key]); }).join('、');
+      return '<tr><td>' + esc(point.date) + '</td><td>' + (point.is_divergence ? '<span class="badge warn">' + esc(point.severity) + '</span>' : '<span class="muted">常态</span>') + '</td><td>' + (tags || '—') + '</td><td>' + esc(point.summary || '—') + '</td><td>' + esc(marketChanges || '—') + '</td><td>' + esc(metrics || '—') + '</td></tr>';
+    }).join('');
+    return '<section class="panel" id="v-timeline"><h2>观察窗口分歧时间轴</h2>' +
+      '<p class="muted">按交易日展示窗口内的高度、广度、市场分组和 T1/T2/T3 口径变化。阈值由规则文件配置；正常日保留在时间轴中，分歧日突出标记。</p>' +
+      '<div class="toolbar">' + tabs + '</div>' +
+      '<div class="table-wrap"><table><thead><tr><th>日期</th><th>级别</th><th>分歧类型</th><th>说明</th><th>市场变化</th><th>口径变化</th></tr></thead><tbody>' + (body || '<tr><td colspan="6">暂无时间轴数据</td></tr>') + '</tbody></table></div></section>';
+  }
+
+  // ---------- 视图：波段表 ----------
+  function waveMeta(kind) {
+    return kind === 'structure'
+      ? { rows: DATA.structure_waves, title: '顶底分型结构', note: '前复权日线先迭代处理包含关系，再识别并去重顶底分型；起点取最新达标日前最近一个已确认底分型。终点取起点确认日之后、观察期最近一个已确认顶分型，无则显示「未确认」——表示该股确实还没形成确认顶分型，不是数据缺失；「双端确认」收益只回撤到终点确认日，与「理论高度/确认后高度」的测量终点不同，不可直接比大小。只做分型，不构造笔、线段或中枢。' }
+      : { rows: DATA.emotion_rallies, title: '首板情绪波段', note: '起点=显式涨停首板（前 5 日无涨停）；终点=前复权最高价连续 4 日不创新高。pending 时终点为 null，不伪造。' };
+  }
+
+  function viewWave(kind) {
+    var meta = waveMeta(kind);
+    var rows = (meta.rows || []).slice();
+    var filter = STATE.filters[kind];
+    var query = (STATE.queries[kind] || '').trim().toLowerCase();
+
+    var counts = { all: rows.length };
+    rows.forEach(function (r) { counts[r.status] = (counts[r.status] || 0) + 1; });
+
+    var endCounts = { all: rows.length };
+    rows.forEach(function (r) {
+      var s = endStateOf(kind, r);
+      endCounts[s] = (endCounts[s] || 0) + 1;
+    });
+
+    var endFilter = STATE.endFilters[kind] || 'all';
+    if (filter !== 'all') rows = rows.filter(function (r) { return r.status === filter; });
+    if (endFilter !== 'all') {
+      rows = rows.filter(function (r) { return endStateOf(kind, r) === endFilter; });
+    }
+    if (query) {
+      rows = rows.filter(function (r) {
+        return String(r.code || '').toLowerCase().indexOf(query) >= 0 ||
+          String(r.name || '').toLowerCase().indexOf(query) >= 0;
+      });
+    }
+
+    var order = STATE.sort[kind] || { key: null, dir: -1 };
+    if (order.key) {
+      rows.sort(function (a, b) {
+        var av = a[order.key], bv = b[order.key];
+        if (av == null && bv == null) return 0;
+        if (av == null) return 1;
+        if (bv == null) return -1;
+        return (av > bv ? 1 : av < bv ? -1 : 0) * order.dir;
+      });
+    }
+
+    var PAGE_SIZE = 25;
+    var total = rows.length;
+    var pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
+    var page = Math.min(Math.max(0, STATE.page[kind] || 0), pageCount - 1);
+    STATE.page[kind] = page;
+    rows = rows.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
+    var pager = total > PAGE_SIZE
+      ? '<div class="toolbar" style="justify-content:flex-end">' +
+        '<button class="fbtn" data-page="' + kind + '" data-dir="-1"' + (page <= 0 ? ' disabled' : '') + '>上一页</button>' +
+        '<span class="muted">第 ' + (page + 1) + ' / ' + pageCount + ' 页 · 共 ' + total + ' 条</span>' +
+        '<button class="fbtn" data-page="' + kind + '" data-dir="1"' + (page >= pageCount - 1 ? ' disabled' : '') + '>下一页</button>' +
+        '</div>'
+      : '';
+
+    var endToolbar = '<div class="toolbar">' +
+      '<span class="muted" style="font-size:12px">终点</span>' +
+      endFilterBtn(kind, 'all', '全部 ' + endCounts.all) +
+      ['confirmed', 'unconfirmed', 'na']
+        .filter(function (s) { return endCounts[s]; })
+        .map(function (s) { return endFilterBtn(kind, s, (END_STATE[s] || [s])[0] + ' ' + endCounts[s]); }).join('') +
+      '</div>';
+
+    var toolbar = '<div class="toolbar">' +
+      '<span class="muted" style="font-size:12px">起点</span>' +
+      filterBtn(kind, 'all', '全部 ' + counts.all) +
+      ['confirmed', 'pending', 'data_insufficient', 'rejected']
+        .filter(function (s) { return counts[s]; })
+        .map(function (s) { return filterBtn(kind, s, (STATUS[s] || [s])[0] + ' ' + counts[s]); }).join('') +
+      '<input class="search" placeholder="搜索代码或名称" value="' + esc(STATE.queries[kind]) + '" data-search="' + kind + '">' +
+      '</div>';
+
+    var head, body, colCount;
+    if (kind === 'structure') {
+      colCount = 13;
+      head = '<tr><th data-sort="code">代码</th><th>名称</th><th>市场</th><th>起点状态</th><th>终点状态</th>' +
+        '<th data-sort="start_date">起点</th><th data-sort="start_confirm_date">起点确认</th>' +
+        '<th data-sort="end_date">终点</th><th data-sort="end_confirm_date">终点确认</th>' +
+        '<th data-sort="gain_theoretical">理论高度</th><th data-sort="gain_observable">确认后高度</th>' +
+        '<th data-sort="gain_dual">双端确认</th><th>明细</th></tr>';
+      body = rows.map(function (r) {
+        var pendingEnd = r.end_date == null;
+        return '<tr><td>' + dash(r.code) + '</td><td><strong>' + dash(r.name) + '</strong></td>' +
+          '<td>' + dash(r.market) + '</td><td>' + badge(r.status) + '</td><td>' + endBadge(kind, r) + '</td>' +
+          '<td>' + dash(r.start_date) + '</td><td>' + dash(r.start_confirm_date) + '</td>' +
+          '<td>' + (pendingEnd ? '<span class="muted">未确认</span>' : dash(r.end_date)) + '</td>' +
+          '<td>' + dash(r.end_confirm_date) + '</td>' +
+          '<td class="num' + (r.gain_theoretical == null ? '' : ' up') + '">' + pct(r.gain_theoretical) + '</td>' +
+          '<td class="num">' + pct(r.gain_observable) + '</td>' +
+          '<td class="num">' + pct(r.gain_dual) + '</td>' +
+          '<td>' + detailBtn(r) + '</td></tr>';
+      }).join('');
+    } else {
+      colCount = 12;
+      head = '<tr><th data-sort="code">代码</th><th>名称</th><th>市场</th><th>状态</th><th>终点状态</th>' +
+        '<th data-sort="first_board_date">首板日</th><th data-sort="high_date">最高日</th>' +
+        '<th data-sort="trend_end_date">结束日</th><th data-sort="gain">波段高度</th>' +
+        '<th data-sort="days">天数</th><th>风格</th><th>明细</th></tr>';
+      body = rows.map(function (r) {
+        var pendingEnd = r.trend_end_date == null;
+        var fbCell = r.first_board_date
+          ? dash(r.first_board_date)
+          : ((r.reasons && r.reasons.length)
+              ? '<span class="muted" style="font-size:11px">' + esc(reasonText(r.reasons[0])) + '</span>'
+              : '<span class="muted">无</span>');
+        return '<tr><td>' + dash(r.code) + '</td><td><strong>' + dash(r.name) + '</strong></td>' +
+          '<td>' + dash(r.market) + '</td><td>' + badge(r.status) + '</td><td>' + endBadge(kind, r) + '</td>' +
+          '<td>' + fbCell + '</td><td>' + dash(r.high_date) + '</td>' +
+          '<td>' + (pendingEnd ? '<span class="muted">未确认</span>' : dash(r.trend_end_date)) + '</td>' +
+          '<td class="num' + (r.gain == null ? '' : ' up') + '">' + pct(r.gain) + '</td>' +
+          '<td class="num">' + dash(r.days) + '</td><td>' + dash(r.style) + '</td>' +
+          '<td>' + detailBtn(r) + '</td></tr>';
+      }).join('');
+    }
+
+    return '<section class="panel" id="v-' + kind + '"><h2>' + meta.title + '</h2>' +
+      '<p class="muted">' + meta.note + ' 「起点状态」按 status 判定；「终点状态」单独判定，未确认即终点为 null，可用终点行的按钮单独筛出。</p>' +
+      toolbar + endToolbar +
+      '<div class="table-wrap"><table><thead>' + head + '</thead><tbody>' +
+      (body || '<tr><td colspan="' + colCount + '">当前筛选条件下无记录</td></tr>') + '</tbody></table></div>' +
+      pager +
+      '</section>';
+  }
+
+  function endFilterBtn(kind, value, label) {
+    return '<button class="fbtn' + ((STATE.endFilters[kind] || 'all') === value ? ' active' : '') +
+      '" data-endfilter="' + kind + '" data-value="' + esc(value) + '">' + esc(label) + '</button>';
+  }
+
+  function filterBtn(kind, value, label) {
+    return '<button class="fbtn' + (STATE.filters[kind] === value ? ' active' : '') +
+      '" data-filter="' + kind + '" data-value="' + value + '">' + esc(label) + '</button>';
+  }
+
+  function detailBtn(row) {
+    var key = row.ts_code || row.code;
+    return key ? '<button class="fbtn" data-detail="' + esc(key) + '">查看</button>' : '—';
+  }
+
+  // ---------- 视图：方法与审计 ----------
+  function viewMethod() {
+    var audit = DATA.audit || {};
+    var validation = audit.validation || {};
+    var sources = (audit.sources || []).map(function (s) {
+      return '<li><span>' + esc(sourceLabel(s.label || '')) + '<small>' + esc(s.label || '') + '</small></span><code>' + esc(s.path || '') + '</code></li>';
+    }).join('');
+    var excluded = (audit.excluded || []).map(function (r) {
+      return '<tr><td>' + dash(r.date) + '</td><td>' + dash(r.name) + '</td><td>' + dash(r.ts_code) +
+        '</td><td class="num">' + pct(r.pct == null ? null : r.pct / 100) + '</td><td>' +
+        dash(r.exclusion_reason || r.reason) + '</td></tr>';
+    }).join('');
+    var process = (audit.process || []).map(function (r) {
+      return '<tr><td>' + dash(r.step) + '</td><td>' + dash(r.component) + '</td><td>' +
+        dash(r.purpose) + '</td><td>' + dash(r.status) + '</td></tr>';
+    }).join('');
+
+    var ffCatLabel = {
+      pool_excluded_bj: '池外-北交所',
+      st_filtered: 'ST排除',
+      recent_ipo_filtered: '近期IPO排除',
+      partial_usable: '池内可用'
+    };
+    var ffHtml = '';
+    if (audit.fetch_failures) {
+      var ff = audit.fetch_failures;
+      var catRows = Object.keys(ff.categories || {}).map(function (k) {
+        var c = ff.categories[k];
+        return '<tr><td>' + esc(reasonCategoryText(k)) + '</td><td>' + esc(c.label || '') + '</td><td class="num">' + (c.count || 0) + '</td></tr>';
+      }).join('');
+      var itemRows = (ff.items || []).map(function (r) {
+        return '<tr><td>' + dash(r.ts_code) + '</td><td>' + dash(r.name) + '</td><td>' + dash(r.market) +
+          '</td><td>' + esc(ffCatLabel[r.category] || r.category) + '</td><td class="num">' +
+          (r.on_disk_rows == null ? '—' : r.on_disk_rows) + '</td><td>' + dash(r.error) + '</td></tr>';
+      }).join('');
+      ffHtml =
+        '<h3>源端抓取失败审计</h3>' +
+        '<div class="callout"><strong>影响评估：</strong>' + esc(ff.impact || '') + '</div>' +
+        '<div class="table-wrap"><table><thead><tr><th>类别</th><th>说明</th><th>数量</th></tr></thead><tbody>' +
+        (catRows || '<tr><td colspan="3">无</td></tr>') + '</tbody></table></div>' +
+        '<div class="table-wrap"><table><thead><tr><th>代码</th><th>名称</th><th>市场</th><th>分类</th><th>在库行数</th><th>源端错误</th></tr></thead><tbody>' +
+        (itemRows || '<tr><td colspan="6">无</td></tr>') + '</tbody></table></div>';
+    }
+
+    return '<section class="panel" id="v-method"><h2>方法与审计</h2>' +
+      '<h3>三重校验</h3>' +
+      '<details><summary>展开查看三段指标校验结果（中文说明）</summary>' + validationTable(validation) + '</details>' +
+      '<h3>处理链路</h3>' +
+      '<div class="table-wrap"><table><thead><tr><th>步骤</th><th>组件</th><th>目的</th><th>状态</th></tr></thead><tbody>' +
+      (process || '<tr><td colspan="4">无记录</td></tr>') + '</tbody></table></div>' +
+      '<h3>阈值后资格排除</h3>' +
+      '<div class="table-wrap"><table><thead><tr><th>日期</th><th>名称</th><th>代码</th><th>涨幅</th><th>排除原因</th></tr></thead><tbody>' +
+      (excluded || '<tr><td colspan="5">本期无排除记录</td></tr>') + '</tbody></table></div>' +
+      ffHtml +
+      '<h3>数据来源</h3><ul class="source-list">' + (sources || '<li>无记录</li>') + '</ul>' +
+      '<h3>口径声明</h3>' +
+      '<div class="callout">所有涨幅字段在契约中统一为<strong>小数比例</strong>（0.4089 = 40.89%），由渲染层乘 100 展示，数据侧禁止预先乘 100。缺失值一律为 <code>null</code> 并渲染为 —；pending 状态的终点为 null，绝不以数据末端填充。</div>' +
+      '</section>';
+  }
+
+  // ---------- 视图：AI 分析 · 交易决策参考 ----------
+  function viewAI() {
+    var a = DATA.ai_analysis;
+    if (!a) return '<section class="panel"><h2>AI 分析 · 交易决策参考</h2><div class="empty">无 AI 分析数据</div></section>';
+    var fieldRows = (a.fields || []).map(function (f) {
+      return '<tr><td><strong>' + esc(f.k) + '</strong></td><td>' + esc(f.v) + '</td></tr>';
+    }).join('');
+    var conditions = a.conditions || {};
+    function condCard(title, arr) {
+      var items = (arr || []).map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('');
+      return '<div class="card" style="padding:14px"><b style="display:block;font-size:14px;margin:0 0 6px;color:#475467">' +
+        title + '</b><ul style="margin:0;padding-left:18px;font-size:13px;line-height:1.7">' +
+        (items || '<li class="muted">—</li>') + '</ul></div>';
+    }
+    var adv = a.advice;
+    var advHtml = adv
+      ? '<div class="kv">' + kv('情绪周期', adv.period || '—') + kv('分歧演化', adv.divergence || '—') +
+        kv('对策略层约束', adv.stance || '—') + kv('总仓位建议', adv.position || '—') + '</div>'
+      : '<div class="empty">数据不足，未给出策略约束</div>';
+    return '<section class="panel" id="v-ai"><h2>AI 分析 · 交易决策参考</h2>' +
+      '<p class="muted">对齐《' + esc(a.framework || '交易决策框架') + '》：先看情绪层，再定策略与总仓位。' +
+      (a.as_of ? '数据截止 ' + esc(a.as_of) + '。' : '') + '框架字段直接取本报告数据填充，summary 为自动总结。</p>' +
+      '<div class="tldr">' + esc(a.summary || '') + '</div>' +
+      '<h3>情绪层状态卡</h3>' +
+      '<div class="table-wrap"><table><thead><tr><th>框架字段</th><th>本报告取值 / 判断</th></tr></thead><tbody>' +
+      (fieldRows || '<tr><td colspan="2">无</td></tr>') + '</tbody></table></div>' +
+      '<h3>策略约束与仓位</h3>' + advHtml +
+      '<h3>关键条件</h3>' +
+      '<div class="grid3">' + condCard('已成立', conditions['成立']) +
+      condCard('待确认', conditions['待确认']) + condCard('失效条件', conditions['失效']) + '</div>' +
+      '<div class="callout">' + esc(a.disclaimer || '') + '</div>' +
+      '</section>';
+  }
+
+  // ---------- 详情（懒加载层） ----------
+  function showDetail(key) {
+    var detail = (DATA.details || {})[key];
+    var title = key;
+    var content;
+    if (!detail) {
+      content = '<div class="empty">该股票无明细数据</div>';
+    } else {
+      content = ['structure', 'emotion'].map(function (kind) {
+        var slot = detail[kind];
+        if (!slot) return '';
+        var top = (slot.evidence || {}).selected_top;
+        var endNote = kind === 'structure'
+          ? ' <span class="badge ' + (top ? 'good' : 'warn') + '">终点' + (top ? '已确认' : '未确认') + '</span>'
+          : '';
+        var reasonNote = (kind === 'emotion' && slot.reasons && slot.reasons.length)
+          ? '<p class="muted" style="margin:2px 0 8px">原因：' +
+            slot.reasons.map(function (r) { return esc(reasonText(r)); }).join('、') + '</p>'
+          : '';
+        return '<h3>' + (kind === 'structure' ? '顶底分型结构' : '首板情绪波段') + ' ' +
+          badge(slot.status) + endNote + '</h3>' + reasonNote +
+          '<details open><summary>evidence</summary><pre>' +
+          esc(JSON.stringify(slot.evidence, null, 2)) + '</pre></details>' +
+          (slot.reasons ? '<details><summary>reasons</summary><pre>' +
+            esc(JSON.stringify(slot.reasons, null, 2)) + '</pre></details>' : '');
+      }).join('');
+    }
+    var dialog = document.getElementById('detail-layer');
+    if (!dialog) {
+      dialog = document.createElement('div');
+      dialog.id = 'detail-layer';
+      dialog.style.cssText = 'position:fixed;inset:0;background:#00000055;z-index:50;display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;overflow:auto';
+      document.body.appendChild(dialog);
+      dialog.addEventListener('click', function (e) { if (e.target === dialog) dialog.remove(); });
+    }
+    dialog.innerHTML = '<div class="panel" style="max-width:880px;width:100%;margin:0">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;gap:12px">' +
+      '<h2 style="margin:0">' + esc(title) + ' 明细</h2>' +
+      '<button class="fbtn" id="detail-close">关闭</button></div>' + content + '</div>';
+    document.getElementById('detail-close').addEventListener('click', function () { dialog.remove(); });
+  }
+
+  // ---------- 路由与渲染 ----------
+  var VIEWS = [
+    { id: 'summary', label: '情绪结论', render: viewSummary },
+    { id: 'ai', label: 'AI 分析', render: viewAI },
+    { id: 'height', label: '高度趋势', render: viewHeight },
+    { id: 'ladder', label: '涨停连板', render: viewLimitUp },
+    { id: 'pool', label: '达标股能涨多高', render: viewPool },
+    { id: 'daily-pool', label: '每日强势股票池', render: viewDailyPool },
+    { id: 'leaders', label: '逐日榜首', render: viewLeaders },
+    { id: 'timeline', label: '分歧时间轴', render: viewTimeline },
+    { id: 'method', label: '方法与审计', render: viewMethod }
+  ].filter(function (v) {
+    // limit_up 为 null 表示本次未产出连板指标：整个入口隐藏，不留死链和空图
+    if (v.id !== 'ladder') return true;
+    return !!(DATA && DATA.limit_up && (DATA.limit_up.points || []).length);
+  });
+
+  function renderHero() {
+    var m = DATA.meta, s = DATA.summary;
+    var stateCls = 'state-' + (s.state || 'neutral');
+    document.getElementById('hero').innerHTML =
+      '<div class="eyebrow">市场分段 10 日涨幅 · 达标股三种算法</div>' +
+      '<h1>' + esc(m.title) + '</h1>' +
+      (m.subtitle ? '<p class="subtitle">' + esc(m.subtitle) + '</p>' : '') +
+      '<div><span class="tag ' + stateCls + '">' + esc(s.state_label || s.state) + '</span>' +
+      '<span class="tag">阈值 ' + pct(m.threshold, 0) + '</span>' +
+      '<span class="tag">' + (m.return_days || 10) + ' 日区间</span>' +
+      '<span class="tag">' + dash(m.date_start) + ' 至 ' + dash(m.date_end) + '</span>' +
+      '<span class="tag">契约 ' + esc(DATA.contract_version) + '</span></div>' +
+      '<div class="tldr">' + esc(s.tldr) + '</div>' +
+      (m.warning ? '<div class="callout"><strong>数据局限：</strong>' + esc(m.warning) + '</div>' : '');
+
+    document.getElementById('disclaimer').innerHTML =
+      '本页由单页应用按契约 <code>' + esc(DATA.contract_version) +
+      '</code> 渲染，数据来源为技能产出。生成时间 ' + esc(m.generated_at || '—') +
+      '。页面不联网、不依赖任何外部库，可离线打开。所有指标为历史统计，不构成投资建议。';
+  }
+
+  function renderNav() {
+    document.getElementById('nav').innerHTML = VIEWS.map(function (v) {
+      return '<a href="#/' + v.id + '" class="' + (STATE.view === v.id ? 'active' : '') + '">' + v.label + '</a>';
+    }).join('');
+  }
+
+  function render() {
+    var view = VIEWS.filter(function (v) { return v.id === STATE.view; })[0] || VIEWS[0];
+    document.getElementById('view').innerHTML = view.render();
+    renderNav();
+    window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
+  }
+
+  function route() {
+    var id = (location.hash || '').replace(/^#\/?/, '') || 'summary';
+    var exists = VIEWS.some(function (v) { return v.id === id; });
+    STATE.view = exists ? id : 'summary';
+    render();
+  }
+
+  // ---------- 事件委托 ----------
+  document.addEventListener('click', function (e) {
+    var pngBtn = e.target.closest('[data-png]');
+    if (pngBtn) { exportChart(pngBtn); return; }
+    var endBtn = e.target.closest('[data-endfilter]');
+    if (endBtn) {
+      var ekind = endBtn.dataset.endfilter;
+      STATE.endFilters[ekind] = endBtn.dataset.value;
+      STATE.page[ekind] = 0;
+      render();
+      return;
+    }
+    var btn = e.target.closest('[data-filter]');
+    if (btn) {
+      var fkind = btn.dataset.filter;
+      STATE.filters[fkind] = btn.dataset.value;
+      STATE.page[fkind] = 0;
+      render();
+      return;
+    }
+    var pmode = e.target.closest('[data-poolmode]');
+    if (pmode) { STATE.poolMode = pmode.dataset.poolmode; render(); return; }
+    var lrow = e.target.closest('[data-ladder-date]');
+    if (lrow) { STATE.ladderDate = lrow.dataset.ladderDate; render(); return; }
+    var pmarket = e.target.closest('[data-poolmarket]');
+    if (pmarket) { STATE.poolMarket = pmarket.dataset.poolmarket; render(); return; }
+    var dailyMarket = e.target.closest('[data-daily-pool-market]');
+    if (dailyMarket) { STATE.dailyPoolMarket = dailyMarket.dataset.dailyPoolMarket; render(); return; }
+    var dailyMetric = e.target.closest('[data-daily-pool-metric]');
+    if (dailyMetric) { STATE.dailyPoolMetric = dailyMetric.dataset.dailyPoolMetric; STATE.dailyPoolAvailability = 'all'; render(); return; }
+    var dailyAvailability = e.target.closest('[data-daily-pool-availability]');
+    if (dailyAvailability) { STATE.dailyPoolAvailability = dailyAvailability.dataset.dailyPoolAvailability; render(); return; }
+    var leaderMarket = e.target.closest('[data-leader-market]');
+    if (leaderMarket) { STATE.leaderMarket = leaderMarket.dataset.leaderMarket; render(); return; }
+    var leaderMetric = e.target.closest('[data-leader-metric]');
+    if (leaderMetric) { STATE.leaderMetric = leaderMetric.dataset.leaderMetric; render(); return; }
+    var timelineTag = e.target.closest('[data-timeline-tag]');
+    if (timelineTag) { STATE.timelineTag = timelineTag.dataset.timelineTag; render(); return; }
+    var pbtn = e.target.closest('[data-page]');
+    if (pbtn) {
+      var pkind = pbtn.dataset.page;
+      var dir = parseInt(pbtn.dataset.dir, 10) || 0;
+      STATE.page[pkind] = Math.max(0, (STATE.page[pkind] || 0) + dir);
+      render();
+      return;
+    }
+    var detail = e.target.closest('[data-detail]');
+    if (detail) { showDetail(detail.dataset.detail); return; }
+    var th = e.target.closest('th[data-sort]');
+    if (th) {
+      var kind = STATE.view === 'structure' ? 'structure' : 'emotion';
+      var cur = STATE.sort[kind] || { key: null, dir: -1 };
+      var key = th.dataset.sort;
+      STATE.sort[kind] = { key: key, dir: cur.key === key ? -cur.dir : -1 };
+      render();
+    }
+  });
+
+  document.addEventListener('change', function (e) {
+    var dateBox = e.target.closest('[data-pool-date]');
+    if (dateBox) { STATE.poolDate = dateBox.value; render(); }
+  });
+
+  document.addEventListener('input', function (e) {
+    var box = e.target.closest('[data-search]');
+    if (!box) return;
+    var kind = box.dataset.search;
+    STATE.queries[kind] = box.value;
+    STATE.page[kind] = 0;
+    var panel = box.closest('.panel');
+    var scroll = box.selectionStart;
+    panel.outerHTML = viewWave(kind);
+    var next = document.querySelector('[data-search="' + kind + '"]');
+    if (next) { next.focus(); try { next.setSelectionRange(scroll, scroll); } catch (err) { } }
+  });
+
+  window.addEventListener('hashchange', route);
+
+  // ---------- 启动 ----------
+  if (!DATA) {
+    document.getElementById('hero').innerHTML =
+      '<div class="eyebrow">市场分段 10 日涨幅</div><h1>报告数据未注入</h1>' +
+      '<div class="callout err">当前 app.html 没有内嵌数据，也未检测到 window.REPORT_DATA。' +
+      '<br>请用 <code>pack_report.py</code> 将 data.json 合并为单文件，或在页面之前引入 <code>report.data.js</code>。</div>';
+    document.getElementById('nav').style.display = 'none';
+  } else if (DATA.contract_version !== CONTRACT_VERSION) {
+    document.getElementById('hero').innerHTML =
+      '<h1>契约版本不匹配</h1><div class="callout err">数据契约 <code>' + esc(DATA.contract_version) +
+      '</code> 与应用期望的 <code>' + CONTRACT_VERSION + '</code> 不一致，拒绝渲染以避免字段错配。</div>';
+    document.getElementById('nav').style.display = 'none';
+  } else {
+    renderHero();
+    route();
+  }
+})();
+</script>
+</body>
+</html>

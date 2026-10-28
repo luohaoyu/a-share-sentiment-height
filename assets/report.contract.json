@@ -1,0 +1,447 @@
+{
+  "contract": "report-view-v4",
+  "description": "市场分段10日涨幅报告 · 视图契约。每日快照支持按市场/口径/状态筛选；观察窗口提供中文可读异常汇总、默认收缩的去重个股明细、逐日分市场榜首及分歧时间轴；情绪指标按全市场/市场分组与 T1/T2/T3 展示区间最高和当前值。",
+  "contract_version": "report-view-v4",
+  "units": {
+    "ratio": "小数比例。0.4089 表示 40.89%。渲染层统一 ×100 后展示，禁止在数据侧预先乘 100。",
+    "date": "YYYY-MM-DD，交易日，升序。",
+    "code": "6 位数字裸代码，如 002242。",
+    "ts_code": "带交易所后缀，如 002242.SZ。",
+    "int": "整数。",
+    "string": "字符串。"
+  },
+  "tiers": {
+    "summary": {
+      "required": true,
+      "desc": "首屏必载层。体积目标 < 200 KB，SPA 首屏只渲染这一层。",
+      "keys": ["meta", "summary", "dates", "height", "limit_up", "pool_trends", "structure_waves", "emotion_rallies", "audit", "ai_analysis"]
+    },
+    "details": {
+      "required": false,
+      "lazy": true,
+      "desc": "明细懒加载层。evidence 体量大，仅在用户点击某只股票时解析对应条目。",
+      "keys": ["details"]
+    }
+  },
+  "schema": {
+    "meta": {
+      "type": "object",
+      "required": ["title", "generated_at", "threshold"],
+      "fields": {
+        "title": { "type": "string", "desc": "报告主标题" },
+        "subtitle": { "type": "string", "nullable": true, "desc": "副标题" },
+        "generated_at": { "type": "string", "desc": "生成时间 ISO 字符串" },
+        "threshold": { "type": "number", "unit": "ratio", "desc": "达标阈值，0.5 表示 10 日涨幅 ≥ 50%" },
+        "return_days": { "type": "int", "desc": "区间涨幅的长度，必须与输入 lookback_trading_sessions 一致；默认 10。注意与 window_days 区分，二者不是一回事。" },
+        "window_days": { "type": "int", "nullable": true, "desc": "实际输出观察窗口长度（交易日），由 dates 数量确定；禁止当作区间涨幅的天数使用。" },
+        "date_start": { "type": "date", "nullable": true },
+        "date_end": { "type": "date", "nullable": true },
+        "warning": { "type": "string", "nullable": true, "desc": "数据局限说明，非空时 SPA 顶部黄条展示" }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "required": ["state", "cards"],
+      "fields": {
+        "state": { "type": "string", "enum": ["strong", "neutral", "weak", "insufficient"], "desc": "情绪状态机" },
+        "state_label": { "type": "string", "desc": "状态中文名，如 情绪强势" },
+        "tldr": { "type": "string", "desc": "一句话结论" },
+        "cards": {
+          "type": "array",
+          "desc": "概览卡片，SPA 按顺序平铺",
+          "items": {
+            "type": "object",
+            "required": ["label", "value"],
+            "fields": {
+              "label": { "type": "string" },
+              "value": { "type": "string", "desc": "已格式化的展示文本，SPA 不再二次加工" },
+              "hint": { "type": "string", "nullable": true }
+            }
+          }
+        }
+      }
+    },
+    "dates": {
+      "type": "array",
+      "items_type": "date",
+      "desc": "观察窗口内全部交易日，升序。所有以日期为 x 轴的序列都以此为准。"
+    },
+    "height": {
+      "type": "object",
+      "required": ["unit", "points"],
+      "fields": {
+        "unit": { "type": "string", "const": "ratio" },
+        "market_groups": { "type": "array", "items_type": "string", "desc": "市场分组名列表，决定 SPA 出几张市场级折线" },
+        "points": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["date"],
+            "fields": {
+              "date": { "type": "date" },
+              "value": { "type": "number", "unit": "ratio", "nullable": true, "desc": "当日全市场 10 日涨幅最大值；无达标股时为 null" },
+              "change": { "type": "number", "unit": "ratio", "nullable": true, "desc": "较前一交易日变化" },
+              "leader_code": { "type": "code", "nullable": true },
+              "leader_name": { "type": "string", "nullable": true },
+              "leader_market": { "type": "string", "nullable": true },
+              "leader_changed": { "type": "boolean", "desc": "当日榜首是否换人" },
+              "leader_streak": { "type": "int", "desc": "榜首连续在榜天数" },
+              "count": { "type": "int", "desc": "当日达标股数" },
+              "by_market": { "type": "object", "desc": "各市场分组的当日最大值，键为 market_groups 中的名字，缺失为 null" },
+              "market_candle_signals": { "type": "object", "desc": "各市场分组独立选取昨日强势股、统计今日表现并锚定该组今日10日涨幅最大值的K线信号；键与market_groups一致" },
+              "candle_signal": {
+                "type": "object",
+                "nullable": true,
+                "desc": "围绕当日10日涨幅最大值绘制的昨日强势股次日表现K线信号；昨日收盘固定股票池，今日观察OHLC，仅编码形态，不代表真实10日涨幅OHLC。",
+                "fields": {
+                  "kind": { "type": "string", "const": "height_anchored_previous_strong_pool_signal" },
+                  "scope": { "type": "string", "enum": ["all_market", "market_group"] },
+                  "market_group": { "type": "string", "nullable": true },
+                  "pool_definition": { "type": "string" },
+                  "selection_date": { "type": "date", "desc": "股票池确定日，即表现日的前一交易日" },
+                  "performance_date": { "type": "date", "desc": "股票池次日表现日期，须与height点日期一致" },
+                  "requested_pool_size": { "type": "int", "desc": "目标池只数 = max(排行腿宽度N, 达标只数)" },
+                  "selected_pool_size": { "type": "int", "desc": "昨日实际入选股票数；可选样本不足目标时小于requested_pool_size" },
+                  "valid_pool_size": { "type": "int", "desc": "今日OHLC完整的有效样本数" },
+                  "rank_leg_size": { "type": "int", "desc": "排行腿宽度N；强池 = 达标股全收 ∪ 涨幅前N" },
+                  "threshold_members": { "type": "int", "desc": "入池成员中10日涨幅达标的只数" },
+                  "rank_fill_members": { "type": "int", "desc": "入池成员中靠排名补足的只数" },
+                  "pool_median_return_10d": { "type": "number", "unit": "ratio", "desc": "入池成员选股日10日涨幅中位数，用于区分池质量与次日承接" },
+                  "coverage_status": { "type": "string", "enum": ["complete", "partial"] },
+                  "base_height_10d": { "type": "number", "unit": "ratio" },
+                  "return_offsets": { "type": "object", "desc": "股票池等权平均单日OHLC收益" },
+                  "display": { "type": "object", "desc": "用于同一Y轴绘图的四价：base_height_10d + return_offsets" },
+                  "members": { "type": "array", "desc": "股票池成员及个股OHLC收益审计明细" },
+                  "note": { "type": "string" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "limit_up": {
+      "type": "object",
+      "nullable": true,
+      "desc": "每日涨停家数与连板梯队。null 表示本次未产出（旧缓存），SPA 必须隐藏该视图而不是渲染空图。",
+      "required": ["unit", "points"],
+      "fields": {
+        "unit": { "type": "string", "const": "count", "desc": "计数单位；与 height/pool_trends 的 ratio 不同，渲染层禁止 ×100" },
+        "market_groups": { "type": "array", "items_type": "string", "desc": "市场分组名，与 by_market 的键一致" },
+        "scope": {
+          "type": "object",
+          "desc": "统计范围与口径声明，原样展示给读者，禁止 SPA 改写",
+          "additional_properties": true
+        },
+        "window": {
+          "type": "object",
+          "desc": "窗口信息；lower_bound_before 为首个交易日，该日及以前连板只能视为下限",
+          "additional_properties": true
+        },
+        "audit": { "type": "object", "nullable": true, "additional_properties": true },
+        "points": {
+          "type": "array",
+          "desc": "与 dates 等长，升序。缺失交易日整条为 null 计数（total=null），不得补零。",
+          "items": {
+            "type": "object",
+            "required": ["date"],
+            "fields": {
+              "date": { "type": "date" },
+              "total": { "type": "int", "nullable": true, "desc": "当日收盘涨停家数" },
+              "first_board": { "type": "int", "nullable": true, "desc": "首板家数" },
+              "consecutive": { "type": "int", "nullable": true, "desc": "二板及以上家数（total - first_board）" },
+              "by_boards": { "type": "object", "nullable": true, "desc": "板数 → 家数，键为整数字符串；各值之和必须等于 total" },
+              "max_boards": { "type": "int", "nullable": true, "desc": "当日最高连板数；无涨停为 0" },
+              "consecutive_ratio": { "type": "number", "unit": "ratio", "nullable": true, "desc": "consecutive / total" },
+              "by_market": { "type": "object", "nullable": true, "desc": "市场分组 → 涨停家数" },
+              "total_change": { "type": "int", "nullable": true, "desc": "较前一交易日变化；首个交易日为 null" },
+              "max_boards_change": { "type": "int", "nullable": true, "desc": "最高连板较前一交易日变化；首个交易日为 null" },
+              "unknown_rows": { "type": "int", "nullable": true, "desc": "当日缺行/涨停状态未知的股票数，与「明确未涨停」区分" },
+              "ladder": {
+                "type": "array",
+                "desc": "板数 >= scope.ladder_min_boards 的个股明细，按板数降序",
+                "items": {
+                  "type": "object",
+                  "required": ["boards", "code", "name"],
+                  "fields": {
+                    "boards": { "type": "int" },
+                    "code": { "type": "code" },
+                    "ts_code": { "type": "ts_code", "nullable": true },
+                    "name": { "type": "string" },
+                    "market": { "type": "string", "nullable": true }
+                  }
+                }
+              },
+              "ladder_truncated": { "type": "boolean", "desc": "明细是否被截断；true 时下游必须提示" }
+            }
+          }
+        }
+      }
+    },
+    "pool_trends": {
+      "type": "object",
+      "required": ["unit", "x", "series", "max_series"],
+      "desc": "观察窗口内逐交易日独立计算的三口径趋势。每个截止日 T 先形成 P(T)={code | 固定10日涨幅(T)>=threshold}；T1为固定10日区间涨幅，T2为截至T已确认严格底分型真实最低价到T的涨幅，T3为截至T当前有效首板收盘到T的涨幅。任何T日之后确认的起点不得用于T日及更早日期。x严格等于观察窗口日期序列，不向前扩展到波段起点；max_series 为每个交易日从 T1/T2/T3 三个口径的最大涨幅中再取最大值。每日快照同时标记相比前一交易日新进个股，并按前5个交易日内曾进入强势池但当前退出的并集口径提供退出个股。",
+      "fields": {
+        "unit": { "type": "string", "const": "ratio" },
+        "x": { "type": "array", "items_type": "date", "desc": "严格等于用户指定观察窗口的交易日序列；每个日期都是独立截止时点" },
+        "x_start_reason": { "type": "string", "desc": "x轴严格使用用户指定观察窗口；每个交易日作为独立截止时点" },
+        "y_max": { "type": "number", "unit": "ratio", "desc": "口径曲线与三口径最大值曲线共用的 y 轴上界，必须由数据侧算好给出，SPA 不得各自缩放" },
+        "max_series": {
+          "type": "object",
+          "required": ["key", "label", "points", "winning_metrics"],
+          "desc": "每个交易日从 T1、T2、T3 的当日最大涨幅中取最大值；市场范围切换同时作用于该趋势图和独立口径趋势图",
+          "fields": {
+            "key": { "type": "string", "const": "max_t1_t2_t3" },
+            "label": { "type": "string" },
+            "points": { "type": "array", "items_type": "number", "nullable_item": true, "desc": "与 x 等长的三口径最大涨幅序列" },
+            "winning_metrics": { "type": "array", "desc": "与 points 等长；每个交易日达到最大值的口径键，可并列" },
+            "definition": { "type": "string" }
+          }
+        },
+        "series": {
+          "type": "array",
+          "min_items": 1,
+          "items": {
+            "type": "object",
+            "required": ["key", "label", "points"],
+            "fields": {
+              "key": { "type": "string", "enum": ["t1", "t2", "t3"], "desc": "t1=10日涨幅基线 t2=底分型起点涨幅 t3=首板情绪波段" },
+              "label": { "type": "string" },
+              "style": { "type": "string", "enum": ["solid", "dashed"], "desc": "t1 建议 dashed，作为参考基线" },
+              "points": { "type": "array", "items_type": "number", "nullable_item": true, "desc": "与 x 等长的数值序列，无数据为 null" },
+              "coverage": { "type": "int", "desc": "该口径有起点数据的股票数，用于降级提示" }
+            }
+          }
+        },
+        "coverage": {
+          "type": "object",
+          "nullable": true,
+          "fields": {
+            "pool_union": { "type": "int", "desc": "窗口内曾进入池的股票并集数" },
+            "threshold_members": { "type": "int", "desc": "池内真正达过阈值的成员数（补位股不计入）" },
+            "rank_fill_members": { "type": "int", "desc": "仅靠前N名补位进池、未达标过的成员数" },
+            "no_structure_start": { "type": "int", "desc": "池内无缠论起点的股票数" },
+            "no_first_board": { "type": "int", "desc": "池内无首板日的股票数" },
+            "no_first_board_reason_counts": {
+              "type": "object",
+              "desc": "无首板成员的原因码计数，键为原因码、值为只数"
+            },
+            "no_first_board_category_counts": {
+              "type": "object",
+              "desc": "无首板成员的原因分类计数，分类包括 structural、data_gap、insufficient_history"
+            },
+            "no_first_board_items": {
+              "type": "array",
+              "desc": "无首板成员的逐股原因明细",
+              "items": { "type": "object", "additional_properties": true }
+            }
+          }
+        },
+        "window_stats": {
+          "type": "object",
+          "desc": "整个观察窗口的异常聚合；event 是股票-交易日次数，stock 是去重股票数；前端以中文标签展示，明细默认收缩",
+          "additional_properties": true
+        },
+        "emotion_metrics": {
+          "type": "object",
+          "desc": "按全市场与市场分组、T1/T2/T3 三种口径汇总区间最高与当前值",
+          "additional_properties": true
+        },
+        "daily_leaders": {
+          "type": "array",
+          "desc": "逐日按 all/by_market 与 T1/T2/T3 独立计算的榜首",
+          "items": { "type": "object", "additional_properties": true }
+        },
+        "daily_snapshots": {
+          "type": "array",
+          "desc": "按观察窗口内每个截止交易日生成的强势股票池快照；池内每只股票都下发三套口径的起点、价格、截止价、涨幅和不可用原因。",
+          "items": {
+            "type": "object",
+            "required": ["date", "count", "members"],
+            "fields": {
+              "date": { "type": "date" },
+              "count": { "type": "int", "desc": "当日固定10日涨幅达到阈值的股票数" },
+              "new_members_count": { "type": "int", "desc": "相比前一交易日新进强势池的个股数" },
+              "exit_compare_date": { "type": "date", "nullable": true, "desc": "前5个交易日比较窗口的最后一个交易日；窗口前无交易日时为 null" },
+              "exit_compare_start_date": { "type": "date", "nullable": true, "desc": "前5个交易日比较窗口的第一天" },
+              "exit_compare_end_date": { "type": "date", "nullable": true, "desc": "前5个交易日比较窗口的最后一天，与 exit_compare_date 一致" },
+              "exit_compare_dates": { "type": "array", "items_type": "date", "desc": "当前日前最多5个交易日的比较窗口" },
+              "exit_count": { "type": "int", "desc": "前5个交易日内曾进入强势池、但当前已退出的去重个股数" },
+              "exit_members": { "type": "array", "desc": "前5个交易日内曾进入强势池、但当前已退出的去重个股明细；窗口前无交易日时为空", "items": { "type": "object", "additional_properties": true } },
+              "members": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["code", "name", "cutoff_date", "rank", "t1", "t2", "t3"],
+                  "fields": {
+                    "code": { "type": "code" },
+                    "ts_code": { "type": "ts_code" },
+                    "name": { "type": "string" },
+                    "market": { "type": "string", "nullable": true },
+                    "market_group": { "type": "string", "nullable": true },
+                    "cutoff_date": { "type": "date" },
+                    "rank": { "type": "int" },
+                    "pool_change": { "type": "string", "enum": ["baseline", "new", "continued"] },
+                    "is_new_entry": { "type": "boolean" },
+                    "t1": { "type": "object", "desc": "固定10日区间证据；status、gain、reason_code、reason_category、reason 统一下发" },
+                    "t2": { "type": "object", "desc": "截至 T 已确认严格底分型真实最低价到 T 的区间证据；不可用时提供分类原因" },
+                    "t3": { "type": "object", "desc": "截至 T 当前有效首板收盘到 T 的区间证据；不可用时提供分类原因" }
+                  }
+                }
+              },
+              "stats": {
+                "type": "object",
+                "desc": "按当日全市场与市场分组统计的各口径可用/异常数量、原因码/分类计数及当日最大值 leaders",
+                "additional_properties": true
+              }
+            }
+          }
+        },
+        "by_market": {
+          "type": "object",
+          "nullable": true,
+          "desc": "按市场分组的三口径序列，键为市场名（如 沪深主板 / 科创成长板），值为 {y_max, series, coverage}；复用同一 x 轴。用于分市场对比。",
+          "additional_properties": true
+        }
+      }
+    },
+    "structure_waves": {
+      "type": "array",
+      "desc": "包含关系处理后的顶底分型结构行；只使用最近已确认底分型作为起点，不构造笔、线段或中枢。全部候选均下发，由 SPA 提供筛选开关。",
+      "items": {
+        "type": "object",
+        "required": ["code", "name", "status"],
+        "fields": {
+          "code": { "type": "code" },
+          "ts_code": { "type": "ts_code", "nullable": true, "desc": "用于关联 details 键" },
+          "name": { "type": "string" },
+          "market": { "type": "string", "nullable": true },
+          "status": { "type": "string", "enum": ["confirmed", "pending", "data_insufficient", "rejected"] },
+          "start_date": { "type": "date", "nullable": true, "desc": "包含处理后底分型中间合并K线日期" },
+          "start_confirm_date": { "type": "date", "nullable": true, "desc": "右侧合并K线收盘确认日" },
+          "start_extreme_date": { "type": "date", "nullable": true, "desc": "底分型真实最低价来源日期" },
+          "measurement_date": { "type": "date", "nullable": true, "desc": "涨幅测量日，通常为最新达标日" },
+          "end_date": { "type": "date", "nullable": true, "desc": "顶分型中间合并K线日期；观察期内无已确认顶分型时为 null" },
+          "end_confirm_date": { "type": "date", "nullable": true, "desc": "顶分型右侧合并K线收盘确认日；不得晚于 measurement_date" },
+          "gain_theoretical": { "type": "number", "unit": "ratio", "nullable": true, "desc": "测量日收盘/底分型最低价-1" },
+          "gain_observable": { "type": "number", "unit": "ratio", "nullable": true, "desc": "测量日收盘/分型确认日收盘-1" },
+          "gain_dual": { "type": "number", "unit": "ratio", "nullable": true, "desc": "顶分型确认日收盘/底分型确认日收盘-1；无已确认顶分型时为 null，禁用 gain_observable 顶替" }
+        }
+      }
+    },
+    "emotion_rallies": {
+      "type": "array",
+      "desc": "首板情绪波段行。同样全部下发，由 SPA 筛选。",
+      "items": {
+        "type": "object",
+        "required": ["code", "name", "status"],
+        "fields": {
+          "code": { "type": "code" },
+          "ts_code": { "type": "ts_code", "nullable": true },
+          "name": { "type": "string" },
+          "market": { "type": "string", "nullable": true },
+          "status": { "type": "string", "enum": ["confirmed", "pending", "data_insufficient", "rejected"] },
+          "first_board_date": { "type": "date", "nullable": true },
+          "high_date": { "type": "date", "nullable": true, "desc": "区间前复权最高价日期" },
+          "trend_end_date": { "type": "date", "nullable": true, "desc": "连续 4 日不创新高确认日；pending 时为 null" },
+          "gain": { "type": "number", "unit": "ratio", "nullable": true, "desc": "滚动最高 / 首板日前收 - 1，已统一为小数比例" },
+          "days": { "type": "int", "nullable": true, "desc": "波段交易日数" },
+          "style": { "type": "string", "nullable": true },
+          "reasons": {
+            "type": "array",
+            "nullable": true,
+            "desc": "该股未被计算的原因码（status=rejected/data_insufficient 时非空）。首板可见范围内无合格首板时使用 no_limit_up_in_search_window；搜索是否触达缓存起点查看 evidence.search_window_diagnostics.search_reached_cache_start。数据缺口原因：prior_limit_status_missing_for_first_board、insufficient_prior_sessions_for_first_board、limit_status_missing_in_first_board_search。"
+          }
+        }
+      }
+    },
+    "details": {
+      "type": "object",
+      "desc": "懒加载明细层。键为 ts_code，值为该股原始 evidence 对象，结构由计算脚本决定，SPA 不解析只透传展示。",
+      "additional_properties": true
+    },
+    "audit": {
+      "type": "object",
+      "nullable": true,
+      "fields": {
+        "validation": { "type": "object", "nullable": true, "desc": "三段校验结果，原样展示" },
+        "excluded": { "type": "array", "desc": "阈值后资格排除记录", "items": { "type": "object", "additional_properties": true } },
+        "fetch_failures": { "type": "object", "nullable": true, "desc": "akshare 源端抓取失败审计（来自 bootstrap_manifest.summary.failures，按池与过滤规则分类）", "additional_properties": true },
+        "process": { "type": "array", "desc": "处理链路日志", "items": { "type": "object", "additional_properties": true } },
+        "sources": { "type": "array", "desc": "数据来源清单", "items": { "type": "object", "additional_properties": true } }
+      }
+    },
+    "market_timeline": {
+      "type": "object",
+      "desc": "观察窗口逐日分歧时间轴，包含高度-广度、市场分化、三口径分歧、涨停-连板背离",
+      "additional_properties": true
+    },
+    "ai_analysis": {
+      "type": "object",
+      "nullable": true,
+      "desc": "按《交易决策框架 V2.1.1》情绪层合成的分析卡：fields 用报告数据直接填，summary 为规则引擎总结。明确不含均线承载/板块承接/个股级别。",
+      "fields": {
+        "engine": { "type": "string" },
+        "framework": { "type": "string" },
+        "as_of": { "type": "date", "nullable": true },
+        "summary": { "type": "string" },
+        "fields": { "type": "array", "items": { "type": "object", "additional_properties": true } },
+        "conditions": { "type": "object", "nullable": true, "additional_properties": true },
+        "advice": { "type": "object", "nullable": true, "additional_properties": true },
+        "disclaimer": { "type": "string" }
+      }
+    }
+  },
+  "degradation": {
+    "missing_value": "null",
+    "desc": "缺失值一律用 JSON null，禁止用空字符串、0 或省略键。空数组 [] 仅表示确实为空集合，不表示缺失。",
+    "null_renders_as": "—",
+    "insufficient_data": "当候选股数不足或数据无法支撑结论时，summary.state 置为 insufficient，且 summary.tldr 必须说明原因。",
+    "null_point": "曲线 points 中无数据的点填 null，SPA 断开折线而非补零。",
+    "never_fake": "pending 状态的 end_date / trend_end_date 必须为 null，禁止用数据末端日期填充伪造终点。"
+  },
+  "views": [
+    { "id": "summary", "label": "情绪结论", "tier": "summary", "uses": ["meta", "summary"] },
+    { "id": "ai", "label": "AI 分析", "tier": "summary", "uses": ["ai_analysis", "height"] },
+    { "id": "height", "label": "高度趋势", "tier": "summary", "uses": ["dates", "height"] },
+    { "id": "ladder", "label": "涨停连板", "tier": "summary", "uses": ["limit_up", "dates"] },
+    { "id": "pool", "label": "达标股能涨多高", "tier": "summary", "uses": ["pool_trends"] },
+    { "id": "daily-pool", "label": "每日强势股票池", "tier": "summary", "uses": ["pool_trends.daily_snapshots", "dates"] },
+    { "id": "leaders", "label": "逐日榜首", "tier": "summary", "uses": ["pool_trends.daily_leaders"] },
+    { "id": "timeline", "label": "分歧时间轴", "tier": "summary", "uses": ["market_timeline", "pool_trends.daily_leaders"] },
+    { "id": "method", "label": "方法与审计", "tier": "summary", "uses": ["audit", "meta"] }
+  ],
+  "changelog": [
+    {
+      "version": "report-view-v4",
+      "date": "2026-10-28",
+      "note": "增量：每日强势池成员增加相比前一交易日的新进标记；按前5个交易日内曾进入强势池的并集下发退出个股明细；新增全市场/分市场三口径最大值单线趋势图并支持市场切换，同时恢复 T1/T2/T3 三个独立趋势图。"
+    },
+    {
+      "version": "report-view-v4",
+      "date": "2026-10-28",
+      "note": "升级：异常个股明细默认收缩；校验结果、数据来源、异常分类与原因统一增加中文可读标签并保留原始字段作辅助；情绪结论去掉波段覆盖；新增全市场/分市场 × T1/T2/T3 的区间最高与当前值；趋势图改为全市场/分市场可切换的三口径最大值单线图，退出池改为前5个交易日并集口径。"
+    },
+    {
+      "version": "report-view-v1",
+      "date": "2026-10-27",
+      "note": "历史版本：新增 limit_up（每日涨停家数 / 连板梯队 / 最高连板），口径为沪深主板+创业板+科创板、排除 ST 与上市不足 60 日次新、不含北交所；连板=连续交易日 is_limit_up 为真，缓存首个交易日只作下限；单位是 count 不是 ratio，渲染层禁止 ×100；null 表示当日无数据，不得补零；缺失时整个 limit_up 为 null，SPA 隐藏该视图。"
+    },
+    {
+      "version": "report-view-v1",
+      "date": "2026-10-27",
+      "note": "增量（不改 contract_version）：ai_analysis 的阈值/标签/策略映射全部外置到 assets/ai_rules.json（唯一口径来源），标签按框架原文对齐（修复但不创新高 / 修复失败），uncovered_fields 扩到 3 项（补板块承接、个股操作级别）；口径说明见 references/trading_framework.md。"
+    },
+    {
+      "version": "report-view-v1",
+      "date": "2026-10-26",
+      "note": "增量（不改 contract_version）：① pool_trends 增加 by_market 分市场三口径；② 新增 ai_analysis（框架情绪层状态卡）；③ 系列 label 口语化；④ 视图 pool 更名『达标股能涨多高』、新增『AI 分析』。"
+    },
+    {
+      "version": "report-view-v1",
+      "date": "2026-10-25",
+      "note": "首版。确立三条硬约束：① gain 一律小数比例，渲染层 ×100；② 缺失用 null，pending 终点不得伪造；③ 三曲线 y 轴上界由数据侧给定，SPA 不得各自缩放。"
+    }
+  ]
+}

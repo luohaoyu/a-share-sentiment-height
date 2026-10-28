@@ -1,0 +1,224 @@
+<svg viewBox="0 0 1240 1050" width="100%" xmlns="http://www.w3.org/2000/svg" role="img">
+  <title>技能结构总览</title>
+  <desc>a-share-sentiment-height-v1 的三层职责、5 组 30 个脚本、产物契约主链与涨停连板支链、数据源接入层与固定资产</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+
+  <style>
+    .box { fill:#ffffff; stroke:#c4ccd6; stroke-width:1; }
+    .soft { fill:#f7f9fb; stroke:#d5dde5; stroke-width:1; }
+    .th { font-family:var(--font-sans, "Microsoft YaHei", "PingFang SC", system-ui, sans-serif); font-size:13.5px; font-weight:600; fill:#1f2a37; }
+    .hd { font-family:var(--font-sans, "Microsoft YaHei", "PingFang SC", system-ui, sans-serif); font-size:12.5px; font-weight:600; fill:#1f2a37; }
+    .t { font-family:var(--font-sans, "Microsoft YaHei", "PingFang SC", system-ui, sans-serif); font-size:13px; font-weight:400; fill:#1f2a37; }
+    .cap { font-family:var(--font-sans, "Microsoft YaHei", "PingFang SC", system-ui, sans-serif); font-size:11.5px; font-weight:400; fill:#5b6b7b; }
+    .tm { font-family:ui-monospace, "Cascadia Mono", Consolas, "Courier New", monospace; font-size:10.5px; font-weight:400; fill:#2b3a4a; }
+    .badge { font-family:var(--font-sans, "Microsoft YaHei", "PingFang SC", system-ui, sans-serif); font-size:10.5px; font-weight:400; fill:#7c8899; }
+    .no { font-family:var(--font-sans, "Microsoft YaHei", "PingFang SC", system-ui, sans-serif); font-size:12px; font-weight:400; fill:#A32E2E; }
+    .arr { fill:none; stroke:#5b6b7b; stroke-width:1.4; marker-end:url(#arrow); }
+  </style>
+
+  <text class="th" x="40" y="36" font-size="16">技能结构 · a-share-sentiment-height-v1</text>
+  <text class="cap" x="40" y="58">三层职责 · 30 个脚本 / 5 组 · 一条主链 + 一条连板支链 · 报告契约 report-view-v1 · 缓存 schema v5</text>
+
+  <!-- ============ Agent 决策层 ============ -->
+  <rect class="box" x="40" y="76" width="900" height="104" rx="10"/>
+  <rect x="44" y="80" width="5" height="96" rx="2" fill="#5F5E5A"/>
+  <text class="th" x="62" y="98">Agent 决策层 · 只做判断，不做计算</text>
+  <text class="t" x="62" y="122">解析需求并冻结口径：交易日数 N · 截止日 · 复权口径 · 次新阈值 · 市场范围 · 输出格式</text>
+  <text class="t" x="62" y="144">选择数据源 AkShare → MCP → 网页降级 ｜ 判断数据质量、解释缺口、给出结论与免责声明</text>
+  <text class="no" x="62" y="166">禁止：手算收益 · 缺口补零 · 伪造调用链路 · 给出仓位数值或个股买卖点</text>
+
+  <!-- ============ 确定性脚本层 ============ -->
+  <text class="hd" x="40" y="206">确定性脚本层 · 5 组 30 个脚本 · 跨组只走 CLI（subprocess），同组仅 contract 自测直接 import</text>
+
+  <!-- row1 -->
+  <rect class="box" x="40" y="222" width="294" height="152" rx="10"/>
+  <rect x="44" y="226" width="5" height="144" rx="2" fill="#185FA5"/>
+  <text class="th" x="60" y="246">fetch/ 采集</text>
+  <text class="badge" x="318" y="246" text-anchor="end">10 个 · 部分联网</text>
+  <text class="tm" x="60" y="274">fetch_akshare_data.py</text>
+  <text class="tm" x="60" y="294">derive_cache.py</text>
+  <text class="tm" x="60" y="314">cache_refresh.py</text>
+  <text class="tm" x="60" y="334">fetch_and_parse_rankings.py</text>
+  <text class="tm" x="60" y="354">neodata ×2 · test ×2（留存）</text>
+
+  <rect class="box" x="343" y="222" width="294" height="152" rx="10"/>
+  <rect x="347" y="226" width="5" height="144" rx="2" fill="#0F6E56"/>
+  <text class="th" x="363" y="246">compute/ 计算</text>
+  <text class="badge" x="621" y="246" text-anchor="end">6 个 · 离线</text>
+  <text class="tm" x="363" y="274">screen_market_threshold_gainers.py</text>
+  <text class="tm" x="363" y="294">calculate_structure_waves.py</text>
+  <text class="tm" x="363" y="314">calculate_emotion_rallies.py</text>
+  <text class="tm" x="363" y="334">calculate_limit_up_ladder.py</text>
+  <text class="tm" x="363" y="354">compute_market_winners_from_daily.py</text>
+
+  <rect class="box" x="646" y="222" width="294" height="152" rx="10"/>
+  <rect x="650" y="226" width="5" height="144" rx="2" fill="#854F0B"/>
+  <text class="th" x="666" y="246">validate/ 校验</text>
+  <text class="badge" x="924" y="246" text-anchor="end">5 个 · 离线</text>
+  <text class="tm" x="666" y="274">validate_cache_contract.py</text>
+  <text class="tm" x="666" y="294">validate_threshold_gainers.py</text>
+  <text class="tm" x="666" y="314">validate_three_height_metrics.py</text>
+  <text class="tm" x="666" y="334">validate_limit_up_ladder.py</text>
+  <text class="tm" x="666" y="354">validate_market_trend_data.py</text>
+
+  <!-- row2 -->
+  <rect class="box" x="40" y="386" width="294" height="152" rx="10"/>
+  <rect x="44" y="390" width="5" height="144" rx="2" fill="#534AB7"/>
+  <text class="th" x="60" y="410">report/ 渲染</text>
+  <text class="badge" x="318" y="410" text-anchor="end">6 个 · 离线 · 唯一渲染入口</text>
+  <text class="tm" x="60" y="438">build_report_spa.py（一键链路）</text>
+  <text class="tm" x="60" y="458">to_contract_data.py</text>
+  <text class="tm" x="60" y="478">validate_contract.py</text>
+  <text class="tm" x="60" y="498">pack_report.py</text>
+  <text class="tm" x="60" y="518">build_threshold_gainers_report.py</text>
+
+  <rect class="box" x="343" y="386" width="294" height="152" rx="10"/>
+  <rect x="347" y="390" width="5" height="144" rx="2" fill="#3B6D11"/>
+  <text class="th" x="363" y="410">contract/ 契约</text>
+  <text class="badge" x="621" y="410" text-anchor="end">3 个 · 离线</text>
+  <text class="tm" x="363" y="438">validate_source_contract.py</text>
+  <text class="tm" x="363" y="458">validate_source_contract_selftest.py</text>
+  <text class="tm" x="363" y="478">export_contract_dataset.py</text>
+  <text class="cap" x="363" y="500">52 条规则 → 可执行检查</text>
+  <text class="cap" x="363" y="518">无法执行项显式 skipped，不静默通过</text>
+
+  <rect class="box" x="646" y="386" width="294" height="152" rx="10"/>
+  <rect x="650" y="390" width="5" height="144" rx="2" fill="#5F5E5A"/>
+  <text class="th" x="666" y="410">调用边界 · 各层禁止事项</text>
+  <text class="cap" x="666" y="438">脚本只产 JSON 契约，不拼 HTML / SVG</text>
+  <text class="cap" x="666" y="458">颜色·坐标·交互固定在 assets/app.html</text>
+  <text class="cap" x="666" y="478">计算层不联网，不猜 ST 与上市日期</text>
+  <text class="cap" x="666" y="498">报告脚本不改原始数据、不掩盖缺失</text>
+  <text class="cap" x="666" y="518">非零退出码必须交回 Agent 判断</text>
+
+  <!-- ============ 产物层 ============ -->
+  <text class="hd" x="40" y="566">产物层 · 脚本之间只通过 JSON 交接（契约文件链，可断点重跑）</text>
+
+  <!-- row1: 主链上游 -->
+  <rect class="box" x="40" y="582" width="250" height="84" rx="10"/>
+  <rect x="44" y="586" width="5" height="76" rx="2" fill="#185FA5"/>
+  <text class="tm" x="60" y="608" font-size="11">price_store/&lt;ts_code&gt;.json</text>
+  <text class="cap" x="60" y="628">唯一价格权威 · qfq[] 四价</text>
+  <text class="cap" x="60" y="646">is_limit_up 由本地 K 线派生</text>
+
+  <rect class="box" x="345" y="582" width="250" height="84" rx="10"/>
+  <rect x="349" y="586" width="5" height="76" rx="2" fill="#0F6E56"/>
+  <text class="tm" x="365" y="608" font-size="11">threshold_gainers.json</text>
+  <text class="cap" x="365" y="628">30 个已完成交易日 × 4 板块</text>
+  <text class="cap" x="365" y="646">10 日涨幅高度 · 达标广度</text>
+
+  <rect class="box" x="650" y="582" width="250" height="84" rx="10"/>
+  <rect x="654" y="586" width="5" height="76" rx="2" fill="#0F6E56"/>
+  <text class="tm" x="670" y="608" font-size="11">three_height_metrics.json</text>
+  <text class="cap" x="670" y="628">10 日 / 缠论 / 首板 三口径</text>
+  <text class="cap" x="670" y="646">合并校验 · 状态枚举</text>
+
+  <path class="arr" d="M290 624 L339 624"/>
+  <path class="arr" d="M595 624 L644 624"/>
+
+  <!-- row2: 支链 + 收敛 -->
+  <rect class="box" x="40" y="692" width="250" height="84" rx="10"/>
+  <rect x="44" y="696" width="5" height="76" rx="2" fill="#0F6E56"/>
+  <text class="tm" x="60" y="718" font-size="11">limit_up_ladder.json</text>
+  <text class="cap" x="60" y="738">涨停家数 · 连板梯队</text>
+  <text class="cap" x="60" y="756">最高连板 · 首板占比</text>
+
+  <rect class="box" x="345" y="692" width="250" height="84" rx="10"/>
+  <rect x="349" y="696" width="5" height="76" rx="2" fill="#534AB7"/>
+  <text class="tm" x="365" y="718" font-size="11">report.data.json</text>
+  <text class="cap" x="365" y="738">report-view-v1 · 11 段</text>
+  <text class="cap" x="365" y="756">首屏 summary + details</text>
+
+  <rect class="box" x="650" y="692" width="250" height="84" rx="10"/>
+  <rect x="654" y="696" width="5" height="76" rx="2" fill="#534AB7"/>
+  <text class="tm" x="670" y="718" font-size="11">report.html</text>
+  <text class="cap" x="670" y="738">单文件 · 零外部引用</text>
+  <text class="cap" x="670" y="756">9 个视图 · 双击离线可开</text>
+
+  <path class="arr" d="M775 666 L775 680 L470 680 L470 692" stroke-dasharray="4 3"/>
+  <path class="arr" d="M290 734 L339 734"/>
+  <path class="arr" d="M595 734 L644 734"/>
+
+  <!-- 校验链 -->
+  <rect class="soft" x="40" y="796" width="860" height="62" rx="8"/>
+  <rect x="44" y="800" width="5" height="54" rx="2" fill="#854F0B"/>
+  <text class="cap" x="62" y="816" font-weight="600" fill="#1f2a37">校验链 · 每段产出后立即校验，任一非零退出码即终止，不得跳步交付</text>
+  <text class="tm" x="62" y="834">validate_cache_contract → validate_threshold_gainers → validate_three_height_metrics</text>
+  <text class="tm" x="62" y="850">validate_limit_up_ladder → validate_contract</text>
+  <text class="cap" x="362" y="850">｜不通过只允许改口径或补数据，不允许改阈值</text>
+
+  <!-- ============ 数据源接入层 ============ -->
+  <rect class="box" x="40" y="878" width="860" height="88" rx="10"/>
+  <rect x="44" y="882" width="5" height="80" rx="2" fill="#185FA5"/>
+  <text class="th" x="62" y="900">数据源接入层 · 唯一联网点是 fetch/fetch_akshare_data.py</text>
+  <text class="cap" x="62" y="922">AkShare　逐股 adjust="qfq"，约 5,577 次/交易日；增量与建库同阶（约 9–10 分钟）</text>
+  <text class="cap" x="62" y="942">MCP　　　按交易日返回全市场横截面 / 历史 ST 状态，用于补位或替换对应分片</text>
+  <text class="cap" x="62" y="960">网页榜单　最后降级通道：fetch_and_parse_rankings → filter_and_rank_winners</text>
+
+  <!-- ============ 右侧：固定资产 ============ -->
+  <rect class="box" x="968" y="76" width="232" height="176" rx="10"/>
+  <rect x="972" y="80" width="5" height="168" rx="2" fill="#3B6D11"/>
+  <text class="th" x="988" y="100" font-size="12.5">固定资产 · Agent 不得改写</text>
+  <text class="tm" x="988" y="124">assets/app.html</text>
+  <text class="cap" x="988" y="142">1,255 行 · 版式 + 交互</text>
+  <text class="tm" x="988" y="164">assets/report.contract.json</text>
+  <text class="cap" x="988" y="182">321 行 · 11 段 / 2 层</text>
+  <text class="tm" x="988" y="204">assets/ai_rules.json</text>
+  <text class="cap" x="988" y="222">112 行 · 阈值·标签·策略</text>
+
+  <rect class="box" x="968" y="264" width="232" height="150" rx="10"/>
+  <rect x="972" y="268" width="5" height="142" rx="2" fill="#5F5E5A"/>
+  <text class="th" x="988" y="288" font-size="12.5">图例 · 色条即脚本组</text>
+  <rect x="992" y="308" width="8" height="8" rx="2" fill="#5F5E5A"/>
+  <text class="cap" x="1006" y="316">决策层</text>
+  <rect x="992" y="334" width="8" height="8" rx="2" fill="#185FA5"/>
+  <text class="cap" x="1006" y="342">fetch 采集</text>
+  <rect x="992" y="360" width="8" height="8" rx="2" fill="#0F6E56"/>
+  <text class="cap" x="1006" y="368">compute 计算</text>
+  <rect x="1108" y="308" width="8" height="8" rx="2" fill="#854F0B"/>
+  <text class="cap" x="1122" y="316">validate 校验</text>
+  <rect x="1108" y="334" width="8" height="8" rx="2" fill="#534AB7"/>
+  <text class="cap" x="1122" y="342">report 渲染</text>
+  <rect x="1108" y="360" width="8" height="8" rx="2" fill="#3B6D11"/>
+  <text class="cap" x="1122" y="368">contract 契约</text>
+  <text class="cap" x="988" y="396">色条 = 脚本组，箭头 = 数据流向</text>
+
+  <rect class="box" x="968" y="426" width="232" height="214" rx="10"/>
+  <rect x="972" y="430" width="5" height="206" rx="2" fill="#534AB7"/>
+  <text class="th" x="988" y="450" font-size="12.5">报告视图 · 9 个</text>
+  <text class="cap" x="988" y="476">情绪结论</text>
+  <text class="cap" x="988" y="496">AI 分析</text>
+  <text class="cap" x="988" y="516">高度趋势</text>
+  <text class="cap" x="988" y="536">涨停连板</text>
+  <text class="cap" x="988" y="556">达标股能涨多高</text>
+  <text class="cap" x="988" y="576">逐日榜首</text>
+  <text class="cap" x="988" y="596">缠论结构波段</text>
+  <text class="cap" x="988" y="616">首板情绪波段</text>
+  <text class="cap" x="988" y="636">方法与审计</text>
+
+  <rect class="box" x="968" y="652" width="232" height="176" rx="10"/>
+  <rect x="972" y="656" width="5" height="168" rx="2" fill="#0F6E56"/>
+  <text class="th" x="988" y="676" font-size="12.5">实测规模 · 截至 2026-10-26</text>
+  <text class="cap" x="988" y="702">股票池 5,577 · 覆盖 5,529</text>
+  <text class="cap" x="988" y="722">30 个交易日 · 45 日缓存窗</text>
+  <text class="cap" x="988" y="742">达标 263 条 / 77 只</text>
+  <text class="cap" x="988" y="762">涨停 55 家 · 连板 15 家</text>
+  <text class="cap" x="988" y="782">最高连板 4 板</text>
+  <text class="cap" x="988" y="802">46 只合格股缺口 → 置信度下调</text>
+
+  <rect class="box" x="968" y="840" width="232" height="126" rx="10"/>
+  <rect x="972" y="844" width="5" height="118" rx="2" fill="#854F0B"/>
+  <text class="th" x="988" y="864" font-size="12.5">交付前必过</text>
+  <text class="cap" x="988" y="890">0 error 才算通过</text>
+  <text class="cap" x="988" y="912">warning 须在报告中显式说明</text>
+  <text class="cap" x="988" y="934">数据缺口不得补零或隐藏</text>
+
+  <!-- ============ 脚注 ============ -->
+  <text class="cap" x="40" y="988">①　is_limit_up 由本地 K 线按官方涨跌幅限制派生（主板 10% / 双创 20% / 北交所 30%），不调用 stock_zt_pool_em</text>
+  <text class="cap" x="40" y="1008">②　缓存 schema v5：price_store 为唯一价格权威；daily_adjusted / forward_daily / unadjusted_daily 为派生层，可删可重建</text>
+  <text class="cap" x="40" y="1028">③　统计不含北交所，仅沪深主板 + 创业板 + 科创板；references/ 8 篇按需读取，不作常驻上下文</text>
+</svg>

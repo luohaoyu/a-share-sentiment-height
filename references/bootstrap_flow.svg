@@ -1,0 +1,90 @@
+<svg viewBox="0 0 680 1100" width="100%" xmlns="http://www.w3.org/2000/svg" role="img">
+  <title>bootstrap 模式程序流程</title>
+  <desc>a-share-sentiment-height-v1 技能 fetch_akshare_data.py --mode bootstrap 的完整执行流程，从参数校验到汇总落盘</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+
+  <style>
+    .box { fill:#ffffff; stroke:#c4ccd6; stroke-width:1; }
+    .t { font-family:var(--font-sans); font-size:13px; font-weight:400; fill:#1f2a37; }
+    .th { font-family:var(--font-sans); font-size:14px; font-weight:500; fill:#1f2a37; }
+    .cap { font-family:var(--font-sans); font-size:12px; font-weight:400; fill:#5b6b7b; }
+    .arr { fill:none; stroke:#5b6b7b; stroke-width:1.5; marker-end:url(#arrow); }
+  </style>
+
+  <text class="th" x="40" y="30" font-size="15">bootstrap 模式程序流程 (fetch_akshare_data.py)</text>
+
+  <!-- A 入口 -->
+  <rect class="box" x="40" y="50" width="600" height="96" rx="10"/>
+  <rect x="44" y="54" width="5" height="88" rx="2" fill="#5F5E5A"/>
+  <text class="th" x="62" y="74">入口 main() · 参数解析与校验</text>
+  <text class="t" x="62" y="100">--mode bootstrap  ·  --end-date D (必填, 不得晚于 as_of)</text>
+  <text class="t" x="62" y="122">--target-count 30  ·  --lookback 10  ·  --buffer-sessions 5</text>
+  <text class="t" x="62" y="144">--rate-limit 9 (每源 req/s)  ·  --workers 16 (≤16)</text>
+
+  <path class="arr" d="M340 146 L340 172"/>
+
+  <!-- B 加载元信息 -->
+  <rect class="box" x="40" y="176" width="600" height="126" rx="10"/>
+  <rect x="44" y="180" width="5" height="118" rx="2" fill="#185FA5"/>
+  <text class="th" x="62" y="200">① 加载元信息</text>
+  <text class="t" x="62" y="226">fetch_calendar(as_of) → calendar 截断到观测日</text>
+  <text class="t" x="62" y="248">校验 end_date ≤ as_of，否则 ValueError 退出</text>
+  <text class="t" x="62" y="270">fetch_master → stock_basic.json（4 接口 / 5 市场）</text>
+  <text class="t" x="62" y="292">可 --refresh-master 强制重抓股票列表</text>
+
+  <path class="arr" d="M340 302 L340 328"/>
+
+  <!-- C bootstrap 预备 -->
+  <rect class="box" x="40" y="332" width="600" height="150" rx="10"/>
+  <rect x="44" y="336" width="5" height="142" rx="2" fill="#0F6E56"/>
+  <text class="th" x="62" y="356">② bootstrap 预备</text>
+  <text class="t" x="62" y="382">required = 30+10+5 = 45 个交易日窗口</text>
+  <text class="t" x="62" y="404">completed_sessions(calendar, end_date, 45) → sessions[0..44]</text>
+  <text class="t" x="62" y="426">universe = master ∩ --symbols（指定子集时）</text>
+  <text class="t" x="62" y="448">加权随机路由 pick_weighted_source → 每只股按 sina:eastmoney:tencent 权重分配源</text>
+  <text class="t" x="62" y="470">worker 池并发取队列任务；失败重投最多 3 次(允许换源)，三次失败入 dead_letter</text>
+
+  <path class="arr" d="M340 482 L340 508"/>
+
+  <!-- D 涨停标记本地派生 -->
+  <rect class="box" x="40" y="512" width="600" height="150" rx="10"/>
+  <rect x="44" y="516" width="5" height="142" rx="2" fill="#854F0B"/>
+  <text class="th" x="62" y="536">③ 涨停标记本地派生 annotate_limit_up()（前复权口径）</text>
+  <text class="t" x="62" y="562">不调用任何三方涨停池接口（stock_zt_pool_em 已移除）</text>
+  <text class="t" x="62" y="584">用上一交易日的前复权收盘价按官方涨跌幅限制计算</text>
+  <text class="t" x="62" y="606">主板 10% / 科创板·创业板 20% / 北交所 30%</text>
+  <text class="t" x="62" y="628">is_limit_up = close ≥ round(prev_close×(1+ratio),2) − 0.005</text>
+  <text class="t" x="62" y="650">首笔无前驱 prev_close → None（data_insufficient）</text>
+
+  <path class="arr" d="M340 662 L340 688"/>
+
+  <!-- E 逐股 fetch_one -->
+  <rect class="box" x="40" y="692" width="600" height="210" rx="10"/>
+  <rect x="44" y="696" width="5" height="202" rx="2" fill="#534AB7"/>
+  <text class="th" x="62" y="716">④ 逐股 fetch_one（并行 workers ≤ 16）</text>
+  <text class="t" x="62" y="742">读 price_store 缓存 → raw_by_date, factor_by_date</text>
+  <text class="t" x="62" y="764">判定 refetch_raw(OHLC缺) / refetch_hfq(因子缺)</text>
+  <text class="t" x="62" y="786">├ refetch_raw → fetch_raw_frame(主源→回退) 未复权 OHLC + 涨停</text>
+  <text class="t" x="62" y="808">├ refetch_hfq → fetch_history_frame(主源→回退) 取 hfq 收盘</text>
+  <text class="t" x="62" y="830">│   factor = hfq_close / raw_close（同一交易日相除）</text>
+  <text class="t" x="62" y="852">└ 非 raw 重抓 但 live∈raw → 覆盖写 live is_limit_up</text>
+  <text class="t" x="62" y="874">build_store + write_store → price_store/&lt;ts_code&gt;.json；异常 → failed</text>
+  <text class="t" x="62" y="896">derive_rows → 仅取窗口内 hfq 行（缺口显式计数，不补 0）</text>
+
+  <path class="arr" d="M340 902 L340 928"/>
+
+  <!-- F 汇总落盘 -->
+  <rect class="box" x="40" y="932" width="600" height="130" rx="10"/>
+  <rect x="44" y="936" width="5" height="122" rx="2" fill="#3B6D11"/>
+  <text class="th" x="62" y="956">⑤ 汇总落盘</text>
+  <text class="t" x="62" y="982">收集 manifest + failures</text>
+  <text class="t" x="62" y="1004">merge_partition → daily_adjusted/&lt;date&gt;.json（按交易日聚合）</text>
+  <text class="t" x="62" y="1026">写 bootstrap_manifest.json（schema_version / coverage / rates）</text>
+  <text class="t" x="62" y="1048">输出 summary；failures &gt; 0 → 退出码 2，否则 0</text>
+
+  <text class="cap" x="40" y="1086">派生层 forward_daily / unadjusted_daily 由 derive_cache.py --mode derive 生成，并非 bootstrap 直接产出</text>
+</svg>

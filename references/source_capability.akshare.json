@@ -1,0 +1,236 @@
+{
+  "schema": "source_capability/1",
+  "contract": "原始数据字段规范 v1.1 §6",
+  "generated_at": "2026-10-25T22:45:00+08:00",
+  "probe_environment": {
+    "akshare_version": "1.19.3",
+    "python": "3.13.12",
+    "observation_date": "2026-10-23",
+    "probe_machine": "Windows / Administrator",
+    "note": "所有 window_* 与 field_support 均来自实测调用，非文档推断"
+  },
+  "conventions": [
+    "field_support 只收录『随数据源变化』的字段。由采集端自行判定或推导的字段（price_basis、series_id、pool_status、coverage_status、source、exchange、market、market_group）不入表——它们不属于源能力，写进来会让规则 51 误判。",
+    "absent 表示源不提供且不可派生，实际数据必须恒为 null；若采集端必须填占位值，改用 field_fallback 显式声明并写明降级后果。",
+    "derived 表示源不提供但可由本对象其他字段合规算出，写入时 source 必须标 derived。",
+    "window_start / window_end 是相对探测日测得的滑动边界，不是固定常量，须定期重新探测（规则 50）。"
+  ],
+  "notes": [
+    "【日历】tool_trade_date_hist_sina 实测 8797 行、仅 1 列 trade_date，无 is_open；表内预排到 2026-12-31，含未来日期，摄入必须先按 as_of 截断（规则 29）。",
+    "【股票】三个名录接口列名完全不同：沪市 证券代码/证券简称/上市日期；深市 A股代码/A股简称/A股上市日期/板块；北交所 证券代码/证券简称/上市日期。沪市上市日期为 datetime.date，深市为 str。",
+    "【股票】三个接口均不返回上市状态（L/D/P），且无法从任何字段推导——这正是 field_fallback 存在的场景：只能填常量 L，代价是退市股留在名录。",
+    "【股票】北交所接口内部 18 次分页并打印 tqdm 进度条，约 5 秒，会污染 stdout，需重定向 stderr。",
+    "【日K】stock_zh_a_daily 在 adjust=hfq/qfq/'' 三种口径下返回完全相同的 9 列，数据本身不带口径标记，必须由调用参数打标进 price_adjust。",
+    "【日K】不提供 pre_close 与 pct_chg；pct_chg 可由同口径相邻 close 合规算出（故标 derived，而非 absent）。pre_close 同理可算，但其定义含除权调整，跨除权日易错，故收紧为 absent。",
+    "【日K】turnover 单位为小数比率（实测 0.004615 表示 0.46%），与涨停池『换手率』（百分点）相差 100 倍。标 supported，但摄入必须 ×100，转换由适配器负责。",
+    "【涨停】stock_zt_pool_em 实测 16 列，不返回涨停价（limit_price 恒 null），封板时间为 6 位数字串（092500），涨跌幅 6 位小数，最新价已被 akshare 内部 /1000。",
+    "【涨停】保留窗口实测：以 2026-10-23 为观测日，20260928 返回 33 行、20260925 返回 0 行（连续两次复检均 0）。即窗口仅 15 个交易日，远短于此前的 30 天估计。20241008 返回 0 行。",
+    "【涨停】历史日上游会漂移（同一天隔几小时重查可能差 1~2 只），故 drift_policy=revised，历史日必须钉住首发版本（规则 25/49）。",
+    "【风险】stock_zh_a_spot_em 只有当日名称快照，无法提供历史 ST 状态。故 risk_flag 标 partial，历史日期必须 coverage_status=partial，禁止用当日名称回填历史（规则 43）。",
+    "【风险】若换成 Tushare namechange，risk_flag 可升为 supported 且全区间 ok——这是同一份契约下唯一需要改的地方。",
+    "【日K增量】stock_zh_a_spot_em 于 2026-10-25 实测连续 3 次 ConnectionError（RemoteDisconnected），当日增量（snapshot）完全不可用。这意味着『当日更新』当前没有可用入口，只能回退 bootstrap 整段重抓 20 分钟。能力声明必须带时间戳，否则这条降级是不可见的。",
+    "【能力声明粒度】field_support 按 (source_id, object_name) 声明，但校验规则 46 会对该对象的所有行生效、不区分来源。一旦同一对象由两个源供数（真实复权价 + 递推合成价），absent 声明会被另一源的行误伤。当前数据尚未触发，是因为快照接口不可用、合成价一行都没进来。"
+  ],
+  "probe_log": [
+    {
+      "at": "2026-10-25T22:54:00+08:00",
+      "action": "bootstrap 小样本真实建库",
+      "result": "ok",
+      "detail": "21 只 × 20 交易日，successful=21 / failed=0，rate_limiter_admitted=62，耗时 32s"
+    },
+    {
+      "at": "2026-10-25T22:56:00+08:00",
+      "action": "snapshot 当日增量（2026-10-23）",
+      "result": "failed",
+      "detail": "stock_zh_a_spot_em 连续 3 次 ConnectionError，未能写入 2026-10-23 实时分区"
+    },
+    {
+      "at": "2026-10-25T23:00:00+08:00",
+      "action": "契约投影 + 52 条规则校验",
+      "result": "ok",
+      "detail": "raw 投影 3 error / 1 warning；归一 + 四价补抓后 0 error / 1 warning"
+    }
+  ],
+  "rows": [
+    {
+      "source_id": "akshare_sina_calendar",
+      "object_name": "calendar",
+      "supported": 1,
+      "field_support": {
+        "cal_date": "supported",
+        "is_open": "absent"
+      },
+      "field_fallback": {
+        "is_open": {
+          "mode": "constant",
+          "value": 1,
+          "degrade": "上游只返回开市日、无 is_open 列，恒填 1 与语义自洽；但表内含未来预排日期，未截断会把未来交易日当成已收盘"
+        }
+      },
+      "window_start": "1990-12-19",
+      "window_end": "2026-12-31",
+      "history_backfill": 1,
+      "update_latency": null,
+      "drift_policy": "stable",
+      "request_model": "bulk",
+      "rate_limit_qps": null,
+      "probed_at": "2026-10-25T22:45:00+08:00"
+    },
+    {
+      "source_id": "akshare_sh_info",
+      "object_name": "security",
+      "supported": 1,
+      "field_support": {
+        "ts_code": "supported",
+        "symbol": "supported",
+        "name": "supported",
+        "list_date": "supported",
+        "list_status": "absent"
+      },
+      "field_fallback": {
+        "list_status": {
+          "mode": "constant",
+          "value": "L",
+          "degrade": "名录接口不返回上市状态，无法推导；退市与暂停上市证券会留在名录并被当作正常上市，需靠名称关键词与行情存在性兜底"
+        }
+      },
+      "window_start": null,
+      "window_end": "2026-10-25",
+      "history_backfill": 1,
+      "update_latency": "PT0S",
+      "drift_policy": "stable",
+      "request_model": "bulk",
+      "rate_limit_qps": null,
+      "probed_at": "2026-10-25T22:45:00+08:00",
+      "interface": "stock_info_sh_name_code(symbol='主板A股' | '科创板')"
+    },
+    {
+      "source_id": "akshare_sz_info",
+      "object_name": "security",
+      "supported": 1,
+      "field_support": {
+        "ts_code": "supported",
+        "symbol": "supported",
+        "name": "supported",
+        "list_date": "supported",
+        "list_status": "absent"
+      },
+      "field_fallback": {
+        "list_status": {
+          "mode": "constant",
+          "value": "L",
+          "degrade": "同上；深市额外提供『板块』列（主板/创业板），可据以推导 market，但不能推导上市状态"
+        }
+      },
+      "window_start": null,
+      "window_end": "2026-10-25",
+      "history_backfill": 1,
+      "update_latency": "PT0S",
+      "drift_policy": "stable",
+      "request_model": "bulk",
+      "rate_limit_qps": null,
+      "probed_at": "2026-10-25T22:45:00+08:00",
+      "interface": "stock_info_sz_name_code(symbol='A股列表')"
+    },
+    {
+      "source_id": "akshare_bj_info",
+      "object_name": "security",
+      "supported": 1,
+      "field_support": {
+        "ts_code": "supported",
+        "symbol": "supported",
+        "name": "supported",
+        "list_date": "supported",
+        "list_status": "absent"
+      },
+      "field_fallback": {
+        "list_status": {
+          "mode": "constant",
+          "value": "L",
+          "degrade": "同上"
+        }
+      },
+      "window_start": null,
+      "window_end": "2026-10-25",
+      "history_backfill": 1,
+      "update_latency": "PT5S",
+      "drift_policy": "stable",
+      "request_model": "bulk",
+      "rate_limit_qps": null,
+      "probed_at": "2026-10-25T22:45:00+08:00",
+      "interface": "stock_info_bj_name_code()"
+    },
+    {
+      "source_id": "akshare_sina_daily",
+      "object_name": "daily_kline",
+      "supported": 1,
+      "field_support": {
+        "open": "supported",
+        "high": "supported",
+        "low": "supported",
+        "close": "supported",
+        "pre_close": "absent",
+        "pct_chg": "derived",
+        "volume": "supported",
+        "amount": "supported",
+        "turnover_rate": "supported",
+        "float_share": "supported"
+      },
+      "window_start": null,
+      "window_end": null,
+      "history_backfill": 1,
+      "update_latency": null,
+      "drift_policy": "stable",
+      "request_model": "per_symbol",
+      "rate_limit_qps": 8.8,
+      "probed_at": "2026-10-25T22:45:00+08:00",
+      "interface": "stock_zh_a_daily(symbol, start_date, end_date, adjust='hfq'|'qfq'|'')"
+    },
+    {
+      "source_id": "akshare_em_ztpool",
+      "object_name": "limit_up_history",
+      "supported": 1,
+      "field_support": {
+        "rank": "supported",
+        "close": "supported",
+        "pct_chg": "supported",
+        "turnover_rate": "supported",
+        "sealed_amount": "supported",
+        "first_seal_time": "supported",
+        "last_seal_time": "supported",
+        "open_times": "supported",
+        "consecutive_boards": "supported",
+        "limit_stat": "supported",
+        "limit_price": "absent"
+      },
+      "window_start": "2026-09-28",
+      "window_end": "2026-10-23",
+      "history_backfill": 1,
+      "update_latency": "PT30M",
+      "drift_policy": "revised",
+      "request_model": "per_date",
+      "rate_limit_qps": 8.8,
+      "probed_at": "2026-10-25T22:45:00+08:00",
+      "interface": "stock_zt_pool_em(date='YYYYMMDD')"
+    },
+    {
+      "source_id": "akshare_em_spot",
+      "object_name": "risk_status",
+      "supported": 1,
+      "field_support": {
+        "name_snapshot": "supported",
+        "risk_flag": "partial",
+        "risk_type": "partial"
+      },
+      "window_start": "2026-10-23",
+      "window_end": "2026-10-23",
+      "history_backfill": 0,
+      "update_latency": "PT0S",
+      "drift_policy": "stable",
+      "request_model": "bulk",
+      "rate_limit_qps": null,
+      "probed_at": "2026-10-25T22:45:00+08:00",
+      "interface": "stock_zh_a_spot_em() 的『名称』列"
+    }
+  ]
+}

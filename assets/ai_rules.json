@@ -1,0 +1,120 @@
+{
+  "rules_version": "ai-rules-v1",
+  "framework": {
+    "name": "交易决策框架总结",
+    "version": "V2.1.1",
+    "doc_title": "交易决策框架总结 V2.1.1.1",
+    "layer": "情绪层",
+    "label": "交易决策框架 V2.1.1 · 情绪层",
+    "source_kind": "feishu_doc",
+    "source_node": "pYTiEKbZc68GyhWMDd3LIA",
+    "source_note": "外部方法论文档，仅取情绪层（周期判定 / 广度 / 空间 / 策略约束）与本技能数据可判定的部分",
+    "doc_ref": "references/trading_framework.md"
+  },
+  "engine": "rule-synthesis-v1",
+  "params": {
+    "min_points": 3,
+    "new_high_ratio": 0.999,
+    "deep_drawdown": -0.2,
+    "break_change": -0.2,
+    "breadth_lookback": 5,
+    "recovery_window": 3,
+    "stage_window": 3
+  },
+  "divergence_params": {
+    "height_change_min": 0.05,
+    "breadth_change_min": 2,
+    "market_change_min": 0.05,
+    "metric_change_min": 0.05,
+    "limit_total_change_min": 10,
+    "max_boards_change_min": 1
+  },
+  "params_note": {
+    "min_points": "低于该交易日数不出判断（样本不足）",
+    "new_high_ratio": "latest >= peak * ratio 视为继续创新高（容差，避免浮点/四舍五入误判）",
+    "deep_drawdown": "距前峰回撤 <= 该值 判为持续收缩 / 修复乏力",
+    "break_change": "单日变化 <= 该值 记为一次断档",
+    "breadth_lookback": "广度对比回看的交易日数（N 个交易日前）",
+    "recovery_window": "断档后处于 D{recovery_window} 观察窗内可用切换试错",
+    "stage_window": "观察阶段展示 D 值的天数上限"
+  },
+  "labels": {
+    "new_high": {
+      "fresh": "继续创新高",
+      "repaired": "修复但不创新高",
+      "weak": "修复失败"
+    },
+    "space": {
+      "raising": "继续抬高",
+      "shrinking": "持续收缩",
+      "flat": "停止扩张"
+    },
+    "breadth": {
+      "expand": "扩张",
+      "shrink": "收缩",
+      "flat": "持平"
+    },
+    "divergence": {
+      "mid": "中继",
+      "continue": "延续",
+      "turn": "转折"
+    },
+    "period": {
+      "mid": "上涨",
+      "continue": "盘整",
+      "turn": "下跌"
+    },
+    "stage": {
+      "prefix": "D",
+      "normal": "常态跟踪"
+    }
+  },
+  "stance": {
+    "mid": {
+      "stance": "顺势进攻",
+      "position": "可提高总仓位，但仍服从个股结构与风险边界"
+    },
+    "continue": {
+      "stance": "分歧承接（观察为主）",
+      "position": "控制总仓位，以观察与轻仓试错为主"
+    },
+    "turn_test": {
+      "stance": "切换试错（小规模分批）",
+      "position": "小规模分批验证，不提高总仓位"
+    },
+    "defend": {
+      "stance": "防守退出",
+      "position": "降仓或空仓，等待新核心与空间重抬"
+    }
+  },
+  "uncovered_fields": [
+    {
+      "k": "5/10 日均线承载",
+      "v": "未覆盖：本报告未计算均线承载，需结合个股走势单独判断"
+    },
+    {
+      "k": "板块承接",
+      "v": "未覆盖：本报告不含板块资金与承接强度数据，需另行验证"
+    },
+    {
+      "k": "个股操作级别",
+      "v": "未覆盖：本报告只到市场情绪层，不含个股买卖点与级别判断"
+    }
+  ],
+  "conditions": {
+    "invalid_break": "再度出现单日 ≤ {break_pp}pp 的断档",
+    "invalid_breadth": "达标广度回落至近 {lookback} 日低位",
+    "invalid_leader": "榜首换人且新核心不能接力创新高",
+    "pending_break_peak": "能否突破前峰 {peak}（现距 {drawdown}）",
+    "pending_break_peak_na": "能否继续抬高高度",
+    "pending_breadth": "广度能否继续扩张（当前 {breadth} 只）",
+    "pending_structure": "结构波段口径能否同步创出新高（见『达标股能涨多高』）",
+    "no_break": "窗口内未出现 ≤ {break_pp}pp 的单日断档",
+    "break_at": "最近一次单日断档在 {date}，此后修复 {days} 个交易日"
+  },
+  "summary": {
+    "template": "当前高度 {latest}，前峰 {peak}（{peak_date}），{new_high}；市场涨幅空间{space}，广度{breadth}。据此分歧演化判为「{divergence}」，情绪周期归为「{period}」，对策略层约束为「{stance}」，总仓位建议：{position}。",
+    "insufficient": "达标交易日不足 {min_points} 个，无法形成稳定的情绪层判断。"
+  },
+  "disclaimer": "本段由规则引擎基于本报告的情绪高度与广度自动合成，不含均线承载、板块承接与个股操作级别判断；仅为方法论映射，不构成投资建议。"
+}
