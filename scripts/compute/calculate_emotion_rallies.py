@@ -727,6 +727,12 @@ def process_stock(
         }
 
     dates = sorted(set(forward_rows) | set(raw_rows))
+    # The first cached qfq row has no predecessor by construction, so its
+    # is_limit_up is a derivation warm-up null rather than a random data gap.
+    # Exclude only leading null-status rows from the first-board search; interior
+    # nulls remain fatal and are still audited as missing market data.
+    while dates and raw_rows.get(dates[0], {}).get("is_limit_up") is None:
+        dates.pop(0)
     first_boards, rejected, insufficient, search_diagnostics = identify_first_boards(
         candidate, dates, raw_rows
     )

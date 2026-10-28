@@ -86,6 +86,8 @@ def build_store(
     qfq_rows: list[dict[str, Any]],
     price_mode: "str | None" = None,
     last_update: "str | None" = None,
+    requested_first: "str | None" = None,
+    requested_last: "str | None" = None,
 ) -> dict[str, Any]:
     """Fold a symbol's qfq series into ``price_store/<ts_code>.json``.
 
@@ -119,6 +121,12 @@ def build_store(
         "basis": "qfq_direct",
         "definition": "qfq fetched directly; downstream consumes ratios only",
         "last_update": last_update,
+        # Requested coverage is distinct from observed K-line coverage. A stock may
+        # list after the window begins or be suspended on a requested session; those
+        # dates were still checked and must not trigger the same network request on
+        # every cache hit. No synthetic K-line is created for such dates.
+        "requested_first": requested_first,
+        "requested_last": requested_last,
         "qfq": qfq_out,
     }
 

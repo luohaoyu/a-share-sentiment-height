@@ -57,7 +57,7 @@ def main() -> int:
     )
     parser.add_argument("--input", type=Path, required=True, help="three_height_metrics.json")
     parser.add_argument("--forward-daily", type=Path, default=None, help="前复权日线目录（构建达标池趋势必需）")
-    parser.add_argument("--unadjusted-daily", type=Path, default=None, help="未复权日线目录（逐日首板口径；缺失时T3为空）")
+    parser.add_argument("--unadjusted-daily", type=Path, required=True, help="含显式涨停状态的日线目录（逐日首板口径，必需）")
     parser.add_argument("--output", type=Path, required=True, help="输出单文件 HTML")
     parser.add_argument("--data-out", type=Path, default=None, help="契约数据路径，默认 output 同目录 report.data.json")
     parser.add_argument("--data-js", type=Path, default=None, help="额外输出 report.data.js（开发调试）")
@@ -75,6 +75,12 @@ def main() -> int:
     if not args.input.exists():
         print(f"错误：输入不存在 {args.input}", file=sys.stderr)
         return 2
+    if not args.unadjusted_daily.is_dir():
+        print(f"错误：涨停状态目录不存在 {args.unadjusted_daily}", file=sys.stderr)
+        return 2
+    if not args.limit_up_ladder or not args.limit_up_ladder.exists():
+        print("错误：必须提供有效的 --limit-up-ladder，禁止生成缺少涨停梯队的正式报告", file=sys.stderr)
+        return 2
     if not args.app.exists():
         print(f"错误：SPA 模板不存在 {args.app}", file=sys.stderr)
         return 2
@@ -91,8 +97,7 @@ def main() -> int:
     ]
     if args.forward_daily:
         step1 += ["--forward-daily", str(args.forward_daily)]
-    if args.unadjusted_daily:
-        step1 += ["--unadjusted-daily", str(args.unadjusted_daily)]
+    step1 += ["--unadjusted-daily", str(args.unadjusted_daily)]
     if args.end_date:
         step1 += ["--end-date", args.end_date]
     if args.manifest:

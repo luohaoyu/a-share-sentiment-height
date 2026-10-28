@@ -116,6 +116,16 @@ def check_pool_trends(data: dict[str, Any], report: Report) -> None:
     if y_max is not None and finite and max(finite) > y_max:
         report.error(f"y_max={y_max} 小于实际最大值 {max(finite):.4f}，折线会被裁顶")
 
+    series_by_key = {item.get("key"): item for item in series}
+    t3_points = (series_by_key.get("t3") or {}).get("points") or []
+    if not t3_points or not any(value is not None for value in t3_points):
+        report.error("T3 首板情绪曲线全空：涨停状态数据未正确传入或计算失败")
+    emotion_t3 = (((pool.get("emotion_metrics") or {}).get("all") or {}).get("t3") or {})
+    available_days = emotion_t3.get("available_days")
+    actual_days = sum(value is not None for value in t3_points)
+    if available_days != actual_days:
+        report.error(f"T3 available_days={available_days!r} 与曲线有效日 {actual_days} 不一致")
+
     def check_max_series(scope: dict[str, Any], label: str) -> None:
         max_series = scope.get("max_series") or {}
         points = max_series.get("points") or []

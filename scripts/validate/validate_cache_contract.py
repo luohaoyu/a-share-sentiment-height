@@ -266,8 +266,14 @@ def check_limit_up_field(
         report.warning("limit_up_field_skipped", "price_store/ missing; cannot validate is_limit_up")
         return
     files = sorted(directory.glob("*.json"))
-    sample = files[:deep_limit] if len(files) > deep_limit else files
-    report.counts["limit_up_field_checked"] = len(sample)
+    sample, sample_meta = deep_sample(files, deep_limit)
+    report.counts["limit_up_field_checked"] = sample_meta["checked"]
+    if sample_meta["sampled"]:
+        report.warning(
+            "limit_up_field_sampled",
+            f"limit-up recomputation sampled {sample_meta['checked']}/{sample_meta['listed']} stores "
+            "(pass --deep-all for exhaustive checking)",
+        )
     checked = mismatched = bad_type = none_count = true_count = false_count = 0
     try:
         import fetch_akshare_data as fad  # local: recompute the K-line value

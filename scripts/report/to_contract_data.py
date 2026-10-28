@@ -750,6 +750,7 @@ def build_pool_trends(
         "x_start_reason": "严格使用用户指定观察窗口；每个交易日作为独立截止时点",
         "y_max": aggregate["y_max"],
         "series": aggregate["series"],
+        "max_series": aggregate["max_series"],
         "coverage": aggregate["coverage"],
         "daily_snapshots": aggregate.get("daily_snapshots") or [],
         "window_stats": build_window_stats(aggregate.get("daily_snapshots") or [], groups),

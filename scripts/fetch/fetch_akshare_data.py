@@ -697,8 +697,19 @@ def bootstrap(
     # captured once per bootstrap run (CST) and closed over by fetch_one so every
     # symbol is judged against the same wall clock.
     now = now_cst()
+    # One-time compatibility bridge for v5 stores written before requested coverage
+    # was persisted. Only a successful prior bootstrap manifest may supply this
+    # metadata; failed/partial runs are never treated as complete.
+    legacy_manifest = prices_v4.load_json(output_dir / "bootstrap_manifest.json") or {}
+    legacy_summary = legacy_manifest.get("summary") or {}
+    legacy_coverage = legacy_summary.get("coverage") or {}
+    legacy_ok = {
+        str(item.get("ts_code"))
+        for item in (legacy_manifest.get("requests") or [])
+        if item.get("status") == "ok" and item.get("ts_code")
+    }
 
-    def fetch_one(stock: dict[str, Any], primary: str) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    def fetch_one(stock: dict[str, Any], primary: str) -> tuple[dict[str, Any], list[dict[str, Any]]]: 
         """Fetch one stock's daily qfq K from a single pinned source.
 
         v5 fetches qfq directly. The cache-refresh decision
@@ -713,7 +724,21 @@ def bootstrap(
         ts_code = stock["ts_code"]
         store = prices_v4.read_store(output_dir, ts_code) or {}
         qfq_by_date = {row["trade_date"]: dict(row) for row in store.get("qfq") or [] if row.get("trade_date")}
-        cache_first, cache_last = prices_v4.cache_range(store)
+        observed_first, observed_last = prices_v4.cache_range(store)
+        # Cache coverage means "this request window has been checked", not "a K-line
+        # exists on both boundary dates". Newly listed/suspended symbols legitimately
+        # lack rows on requested sessions; using observed bounds would re-fetch those
+        # same empty ranges forever. Legacy stores fall back to observed bounds once.
+        cache_first = store.get("requested_first") or observed_first
+        cache_last = store.get("requested_last") or observed_last
+        if (
+            not store.get("requested_first")
+            and ts_code in legacy_ok
+            and legacy_coverage.get("first_session")
+            and legacy_coverage.get("last_session")
+        ):
+            cache_first = str(legacy_coverage["first_session"])
+            cache_last = str(legacy_coverage["last_session"])
         last_update = parse_iso_datetime(store.get("last_update"))
         missing = sessions_to_fetch(
             cache_first, cache_last, last_update, sessions[0], sessions[-1], now, sessions,
@@ -737,13 +762,19 @@ def bootstrap(
                     "sessions_without_adjusted_close": 0,
                     "cached": True,
                 }, [])
-            mstart = min(missing).replace("-", "")
-            mend = max(missing).replace("-", "")
+            # Include one observed boundary as an anchor. An exact one-day query may
+            # legitimately return no row when the stock is suspended; the anchor
+            # distinguishes a healthy endpoint with no new K-line from an entirely
+            # empty/failed response, without inventing a bar for the missing day.
+            fetch_first = min(filter(None, [min(missing), observed_last]))
+            fetch_last = max(filter(None, [max(missing), observed_first]))
+            mstart = fetch_first.replace("-", "")
+            mend = fetch_last.replace("-", "")
             frame, history_source, _attempts, elapsed = fetch_qfq_frame(
                 ak, stock, mstart, mend, retries, min_interval, primary_source=primary,
             )
             fetched = frame_ohlc_rows(frame, ts_code, set(sessions))
-            if not fetched:
+            if not fetched and not qfq_by_date:
                 raise ValueError("qfq frame contains no requested sessions")
             for row in fetched:
                 day = row["trade_date"]
@@ -763,6 +794,8 @@ def bootstrap(
                 list(qfq_by_date.values()),
                 f"akshare_{history_source}",
                 now_cst().isoformat(timespec="seconds"),
+                min(filter(None, [store.get("requested_first"), sessions[0]])),
+                max(filter(None, [store.get("requested_last"), sessions[-1]])),
             )
             refresh_limit_up_in_payload(store_payload, ts_code)
             prices_v4.write_store(output_dir, store_payload)
@@ -939,15 +972,22 @@ def limit_ratio_for_ts_code(ts_code: str) -> float:
 
 
 def limit_up_price(prev_close: float, ratio: float) -> float:
-    """Official limit-up price: prev_close * (1 + ratio), rounded to 0.01 (四舍五入).
+    """Return the qfq-caliber limit price, rounded half-up to one cent.
 
-    When prev_close < 1.0 the increment is the minimum tick 0.01 (沪深规则).
-    Uses decimal ROUND_HALF_UP to match the exchange's 四舍五入 convention.
+    The project deliberately uses one forward-adjusted price basis throughout.
+    The minimum-tick fallback applies only when the rounded proportional limit
+    differs from the previous close by less than one cent; it does *not* apply to
+    every qfq price below one yuan.  The old ``prev < 1`` shortcut materially
+    understated the limit for low qfq prices and created false positives.
     """
-    prev = Decimal(str(prev_close))
-    if prev < Decimal("1"):
-        return float((prev + Decimal("0.01")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
-    return float((prev * Decimal(str(1 + ratio))).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
+    tick = Decimal("0.01")
+    prev = Decimal(str(prev_close)).quantize(tick, rounding=ROUND_HALF_UP)
+    candidate = (prev * (Decimal("1") + Decimal(str(ratio)))).quantize(
+        tick, rounding=ROUND_HALF_UP
+    )
+    if abs(candidate - prev) < tick:
+        candidate = prev + tick
+    return float(candidate)
 
 
 def compute_limit_up(prev_close: float, close: float, ratio: float) -> bool:
@@ -1572,7 +1612,11 @@ def main() -> int:
     weights = resolve_source_weights(args)
 
     if args.mode == "bootstrap":
-        required = args.target_count + args.lookback + args.buffer_sessions
+        # One extra predecessor session is required to derive is_limit_up for the
+        # first analytical/cache session.  Without it every symbol's first row is
+        # necessarily null, and the T3 first-board search can incorrectly downgrade
+        # otherwise complete candidates to data_insufficient.
+        required = args.target_count + args.lookback + args.buffer_sessions + 1
         sessions = completed_sessions(calendar, end_date, required)
         # 父进程：把股票池切成 N 个分片，交给 N 个 OS 进程各跑一个线程池。
         # 只有父进程写最终 manifest / daily_adjusted，子进程只写自己的切片。

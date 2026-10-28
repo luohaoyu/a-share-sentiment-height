@@ -1,0 +1,129 @@
+{
+  "contract_version": "cli-v1.0.0",
+  "skill_version": "1.0.1",
+  "working_directory": "skill_root",
+  "python_command": "managed_or_active_isolated_python",
+  "help_policy": {
+    "routine_help_forbidden_when_valid": true,
+    "allowed_reasons": [
+      "script_or_option_not_registered",
+      "contract_validation_failed",
+      "argument_parse_error",
+      "requested_mode_not_covered",
+      "script_changed_since_validation"
+    ]
+  },
+  "scripts": {
+    "cache": {
+      "path": "scripts/fetch/fetch_akshare_data.py",
+      "network": "status=false; bootstrap=true",
+      "required_options": ["--mode", "--output-dir", "--end-date"],
+      "choices": {"--mode": ["bootstrap", "status"]},
+      "defaults": {
+        "--target-count": 30,
+        "--lookback": 10,
+        "--buffer-sessions": 30,
+        "--min-interval": 0.0,
+        "--rate-limit": 1.0,
+        "--retries": 1,
+        "--task-attempts": 3,
+        "--workers": 32,
+        "--shards": 1,
+        "--shard-retries": 2
+      },
+      "deprecated_options": ["--start-date"],
+      "template": "python scripts/fetch/fetch_akshare_data.py --mode <status|bootstrap> --output-dir <cache> --end-date <YYYY-MM-DD> --target-count 30 --lookback 10 --buffer-sessions 30",
+      "notes": ["status must run before compute or bootstrap", "bootstrap also handles incremental updates", "source-rates and source-weights accept JSON file paths"]
+    },
+    "derive": {
+      "path": "scripts/fetch/derive_cache.py",
+      "network": false,
+      "required_options": ["--mode", "--cache-dir"],
+      "choices": {"--mode": ["factorize", "derive", "verify"]},
+      "defaults": {"--tolerance": 0.0100001},
+      "template": "python scripts/fetch/derive_cache.py --mode derive --cache-dir <cache> --qfq-symbols <ts_code...> --json-out <run>/derive.json",
+      "notes": ["daily workflow uses derive", "qfq-symbols is the preferred candidate scope"]
+    },
+    "validate_cache": {
+      "path": "scripts/validate/validate_cache_contract.py",
+      "network": false,
+      "required_options": ["--cache-dir"],
+      "defaults": {"--sample": 50, "--workers": 16, "--deep-sample": 300},
+      "template": "python scripts/validate/validate_cache_contract.py --cache-dir <cache> --sample 50 --deep-sample 300 --json-out <run>/cache_contract.json"
+    },
+    "screen": {
+      "path": "scripts/compute/screen_market_threshold_gainers.py",
+      "network": false,
+      "required_options": ["--calendar", "--daily", "--stock-basic", "--output"],
+      "choices": {"--st-coverage": ["complete", "partial"]},
+      "defaults": {"--st-coverage": "complete", "--target-count": 30, "--lookback": 10, "--min-return": 50.0, "--strong-pool-rank-size": 10, "--threshold-days": 60},
+      "template": "python scripts/compute/screen_market_threshold_gainers.py --calendar <cache>/calendar.json --daily <cache>/daily_adjusted --stock-basic <cache>/stock_basic.json --st-coverage partial --allow-name-only-st --prices-adjusted --target-count 30 --lookback 10 --min-return 50 --strong-pool-rank-size 10 --threshold-days 60 --end-date <date> --output <run>/threshold_gainers.json",
+      "notes": ["AkShare v5 requires prices-adjusted", "without prices-adjusted, adj-factor is required"]
+    },
+    "structure": {
+      "path": "scripts/compute/calculate_structure_waves.py",
+      "network": false,
+      "required_options": ["--input", "--forward-daily", "--output"],
+      "defaults": {"--workers": 4},
+      "template": "python scripts/compute/calculate_structure_waves.py --input <run>/threshold_gainers.json --forward-daily <cache>/forward_daily --output <run>/structure_waves.json --workers 4"
+    },
+    "emotion": {
+      "path": "scripts/compute/calculate_emotion_rallies.py",
+      "network": false,
+      "required_options": ["--input", "--forward-daily", "--unadjusted-daily", "--output"],
+      "defaults": {"--workers": 4},
+      "template": "python scripts/compute/calculate_emotion_rallies.py --input <run>/threshold_gainers.json --forward-daily <cache>/forward_daily --unadjusted-daily <cache>/unadjusted_daily --output <run>/emotion_rallies.json --workers 4"
+    },
+    "merge_metrics": {
+      "path": "scripts/validate/validate_three_height_metrics.py",
+      "network": false,
+      "required_options": ["--base-input", "--structure-input", "--emotion-input", "--output"],
+      "defaults": {},
+      "template": "python scripts/validate/validate_three_height_metrics.py --base-input <run>/threshold_gainers.json --structure-input <run>/structure_waves.json --emotion-input <run>/emotion_rallies.json --output <run>/three_height_metrics.json"
+    },
+    "limit_up": {
+      "path": "scripts/compute/calculate_limit_up_ladder.py",
+      "network": false,
+      "required_options": ["--price-store", "--calendar", "--stock-basic", "--output"],
+      "defaults": {"--window-days": 30, "--min-listing-days": 60, "--ladder-min-boards": 2, "--ladder-max-rows": 120},
+      "template": "python scripts/compute/calculate_limit_up_ladder.py --price-store <cache>/price_store --calendar <cache>/calendar.json --stock-basic <cache>/stock_basic.json --end-date <date> --window-days 30 --output <run>/limit_up_ladder.json"
+    },
+    "validate_limit_up": {
+      "path": "scripts/validate/validate_limit_up_ladder.py",
+      "network": false,
+      "required_options": ["--input"],
+      "defaults": {},
+      "template": "python scripts/validate/validate_limit_up_ladder.py --input <run>/limit_up_ladder.json --expected-dates 30 --json-out <run>/limit_up_ladder.validation.json"
+    },
+    "report": {
+      "path": "scripts/report/build_report_spa.py",
+      "network": false,
+      "required_options": ["--input", "--unadjusted-daily", "--output"],
+      "defaults": {"--return-days": 10},
+      "template": "python scripts/report/build_report_spa.py --input <run>/three_height_metrics.json --forward-daily <cache>/forward_daily --unadjusted-daily <cache>/unadjusted_daily --manifest <cache>/bootstrap_manifest.json --stock-basic <cache>/stock_basic.json --price-store <cache>/price_store --limit-up-ladder <run>/limit_up_ladder.json --end-date <date> --return-days 10 --output <run>/report.html --data-out <run>/report.data.json",
+      "forbidden_for_delivery": ["--skip-validate"]
+    },
+    "contract_data": {
+      "path": "scripts/report/to_contract_data.py",
+      "network": false,
+      "required_options": ["--input", "--output"],
+      "defaults": {"--return-days": 10},
+      "template": "python scripts/report/to_contract_data.py --input <run>/three_height_metrics.json --forward-daily <cache>/forward_daily --unadjusted-daily <cache>/unadjusted_daily --output <run>/data.json --return-days 10"
+    },
+    "validate_report": {
+      "path": "scripts/report/validate_contract.py",
+      "network": false,
+      "required_options": ["--data"],
+      "defaults": {},
+      "template": "python scripts/report/validate_contract.py --data <run>/data.json --json"
+    },
+    "pack_report": {
+      "path": "scripts/report/pack_report.py",
+      "network": false,
+      "required_options": ["--data", "--output"],
+      "defaults": {},
+      "template": "python scripts/report/pack_report.py --data <run>/data.json --output <run>/report.html",
+      "forbidden_for_delivery": ["--skip-validate", "--no-embed"]
+    }
+  }
+}

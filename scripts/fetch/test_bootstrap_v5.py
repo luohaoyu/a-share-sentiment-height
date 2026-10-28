@@ -141,6 +141,25 @@ def test_cache_skip():
         check("no dead letter", dead == [], str(dead))
 
 
+def test_requested_coverage_skips_late_listing_empty_prefix():
+    print("[1b] requested coverage exceeds observed K-lines -> skip, no network")
+    with tempfile.TemporaryDirectory() as d:
+        # Simulate a newly listed stock: the requested window starts on 10-20 but
+        # its first observable K-line is 10-22. Persisted requested coverage must
+        # prevent 10-20/10-21 from being fetched forever.
+        write_store(d, "000001.SZ", SESSIONS[2:])
+        store = fa.prices_v4.read_store(Path(d), "000001.SZ")
+        store["requested_first"] = SESSIONS[0]
+        store["requested_last"] = SESSIONS[-1]
+        fa.prices_v4.write_store(Path(d), store)
+        ak = FakeAk()
+        master = [make_stock("000001", "000001.SZ", "SZ")]
+        manifest, dead = run_bootstrap(d, ak, master, SESSIONS)
+        check("late-listing prefix does not re-fetch", ak.calls == [], str(ak.calls))
+        check("late-listing cache hit succeeds", manifest and manifest[0].get("cached") is True, str(manifest))
+        check("late-listing no dead letter", dead == [], str(dead))
+
+
 def test_per_day_incremental():
     print("[2] cache covers first three -> only the missing session fetched")
     with tempfile.TemporaryDirectory() as d:
@@ -151,7 +170,7 @@ def test_per_day_incremental():
         check("exactly one network call", len(ak.calls) == 1, str(ak.calls))
         if ak.calls:
             src, sym, sd, ed, adj = ak.calls[0]
-            check("request window == missing day only", (sd, ed) == ("20261023", "20261023"), str(ak.calls))
+            check("request window == anchor plus missing day", (sd, ed) == ("20261022", "20261023"), str(ak.calls))
             check("adjust == qfq", adj == "qfq", str(ak.calls))
         store = fa.prices_v4.read_store(Path(d), "000001.SZ")
         first, last = fa.prices_v4.cache_range(store)
@@ -226,6 +245,7 @@ def test_bj_excludes_tencent():
 
 if __name__ == "__main__":
     test_cache_skip()
+    test_requested_coverage_skips_late_listing_empty_prefix()
     test_per_day_incremental()
     test_empty_cache_full_fetch()
     test_cross_source_reroute()
